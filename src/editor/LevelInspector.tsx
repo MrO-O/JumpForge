@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { normalizeEnabledAbilities } from '../abilities/abilityRegistry';
+import type { AbilityId } from '../abilities/abilityTypes';
 import { defaultMovementProfile, getMovementPreset, resolveMovementProfile } from '../game/movementPresets';
 import { clampPlayerTuningValue, editablePlayerTuningKeys, playerTuningBounds, playerTuningLabels, type PlayerTuningKey } from '../game/playerTuning';
 import { getNonEmptyTilesOutsideBounds, resizeLevel } from '../levels/levelCommands';
@@ -45,6 +46,15 @@ export function LevelInspector({ level, validation, onChange, onNotice }: LevelI
       return;
     }
     update({ enabledAbilities: enabled ? normalizeEnabledAbilities([...level.enabledAbilities, 'dash']) : level.enabledAbilities.filter((ability) => ability !== 'dash') });
+  };
+  const setOptionalAbility = (abilityId: Extract<AbilityId, 'wallJump' | 'wallClimb'>, enabled: boolean) => {
+    const requiredTiles = abilityId === 'wallClimb' ? ['climbWall', 'staminaRefill'] : [];
+    const hasRequiredTiles = requiredTiles.length > 0 && level.layers.some((layer) => layer.tiles.some((tile) => requiredTiles.includes(tile)));
+    if (!enabled && hasRequiredTiles) {
+      onNotice(`地图中仍有 ${requiredTiles.join(' 或 ')}；请先清理这些 tile，才能关闭 ${abilityId}。`);
+      return;
+    }
+    update({ enabledAbilities: enabled ? normalizeEnabledAbilities([...level.enabledAbilities, abilityId]) : level.enabledAbilities.filter((ability) => ability !== abilityId) });
   };
 
   const updateMovementProfile = (movementProfile: MovementProfile) => update({ movementProfile });
@@ -111,7 +121,9 @@ export function LevelInspector({ level, validation, onChange, onNotice }: LevelI
         <label className="checkbox-row"><input type="checkbox" checked disabled />move <small>基础</small></label>
         <label className="checkbox-row"><input type="checkbox" checked disabled />jump <small>基础</small></label>
         <label className="checkbox-row"><input type="checkbox" checked={level.enabledAbilities.includes('dash')} onChange={(event) => setDash(event.target.checked)} />dash <small>可选</small></label>
-        <p className="reserved-note">wallJump、doubleJump、carry：reserved，尚不能启用。</p>
+        <label className="checkbox-row"><input type="checkbox" checked={level.enabledAbilities.includes('wallJump')} onChange={(event) => setOptionalAbility('wallJump', event.target.checked)} />wallJump <small>可选</small></label>
+        <label className="checkbox-row"><input type="checkbox" checked={level.enabledAbilities.includes('wallClimb')} onChange={(event) => setOptionalAbility('wallClimb', event.target.checked)} />wallClimb <small>可选</small></label>
+        <p className="reserved-note">doubleJump、carry：reserved，尚不能启用。</p>
       </section>
 
       <section className="inspector-section movement-panel">

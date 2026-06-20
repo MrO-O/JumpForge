@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import type { PlayerBody, PlayerController } from './PlayerController';
+import type { PlayerBody, PlayerController, WallContact } from './PlayerController';
 import type { RuntimeLevelBuildResult, RuntimeTileEntity } from './RuntimeLevelBuilder';
 import type { RuntimeCellKey, RuntimeLevelState } from './runtimeTypes';
 
@@ -43,6 +43,7 @@ export class TileRuntimeController {
 
   bind(): void {
     this.scene.physics.add.collider(this.player, this.level.solids);
+    this.scene.physics.add.collider(this.player, this.level.climbWalls);
     this.scene.physics.add.collider(this.player, this.level.oneWayPlatforms, undefined, (_player, platform) => this.canLandOnOneWay(platform));
     this.scene.physics.add.collider(this.player, this.level.lockedDoors, (_player, door) => this.handleLockedDoor(door));
     this.scene.physics.add.collider(this.player, this.level.switchDoors);
@@ -53,6 +54,7 @@ export class TileRuntimeController {
     this.scene.physics.add.overlap(this.player, this.level.keys, (_player, key) => this.handleKey(key));
     this.scene.physics.add.overlap(this.player, this.level.switches, (_player, switchTile) => this.handleSwitch(switchTile));
     this.scene.physics.add.overlap(this.player, this.level.dashCrystals, (_player, crystal) => this.handleDashCrystal(crystal));
+    this.scene.physics.add.overlap(this.player, this.level.staminaRefills, (_player, refill) => this.handleStaminaRefill(refill));
   }
 
   resetForAttempt(): void {
@@ -85,10 +87,34 @@ export class TileRuntimeController {
           setVisible(entity, true);
           setColliderEnabled(entity, true);
           break;
+        case 'staminaRefill':
+          setVisible(entity, true);
+          this.setTriggerEnabled(entity, true);
+          break;
         default:
           break;
       }
     }
+  }
+
+  /** A small tile-neighbour probe is more reliable than Arcade side flags for wall abilities. */
+  getWallContact(): WallContact | null {
+    const body = this.player.body;
+    const playerLeft = body.x;
+    const playerRight = body.x + body.width;
+    const playerTop = body.y;
+    const playerBottom = body.y + body.height;
+    for (const entity of this.level.entitiesByCell.values()) {
+      if (!entity.collider || !this.isWallEntity(entity) || !this.isColliderEnabled(entity)) continue;
+      const entityLeft = entity.x - entity.visual.width / 2;
+      const entityRight = entity.x + entity.visual.width / 2;
+      const entityTop = entity.y - entity.visual.height / 2;
+      const entityBottom = entity.y + entity.visual.height / 2;
+      if (Math.min(playerBottom, entityBottom) - Math.max(playerTop, entityTop) < 6) continue;
+      if (Math.abs(entityLeft - playerRight) <= 6) return { side: 'right', climbable: entity.kind === 'climbWall' };
+      if (Math.abs(playerLeft - entityRight) <= 6) return { side: 'left', climbable: entity.kind === 'climbWall' };
+    }
+    return null;
   }
 
   private handleKey(object: unknown): void {
@@ -100,6 +126,17 @@ export class TileRuntimeController {
     setVisible(entity, false);
     this.setTriggerEnabled(entity, false);
     this.callbacks.onMessage('Key collected.');
+  }
+
+  private handleStaminaRefill(object: unknown): void {
+    const entity = getEntity(this.level, object);
+    if (!entity || this.state.consumedStaminaRefillCells.has(entity.cellKey)) return;
+    this.state.consumedStaminaRefillCells.add(entity.cellKey);
+    this.state.hiddenTileCells.add(entity.cellKey);
+    this.playerController.refillStamina();
+    setVisible(entity, false);
+    this.setTriggerEnabled(entity, false);
+    this.callbacks.onMessage('Stamina refilled.');
   }
 
   private handleLockedDoor(object: unknown): void {
@@ -184,5 +221,19 @@ export class TileRuntimeController {
   private setTriggerEnabled(entity: RuntimeTileEntity, enabled: boolean): void {
     const body = entity.trigger?.body as Phaser.Physics.Arcade.StaticBody | undefined;
     if (body) body.enable = enabled;
+  }
+
+  private isColliderEnabled(entity: RuntimeTileEntity): boolean {
+    const body = entity.collider?.body as Phaser.Physics.Arcade.StaticBody | undefined;
+    return body?.enable === true;
+  }
+
+  private isWallEntity(entity: RuntimeTileEntity): boolean {
+    return entity.kind === 'solid'
+      || entity.kind === 'spring'
+      || entity.kind === 'lockedDoor'
+      || entity.kind === 'switchDoor'
+      || entity.kind === 'dashBlock'
+      || entity.kind === 'climbWall';
   }
 }

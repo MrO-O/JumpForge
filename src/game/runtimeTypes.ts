@@ -8,6 +8,8 @@ export interface RuntimeDirection {
   y: number;
 }
 
+export type WallSide = 'left' | 'right';
+
 export type RuntimeCellKey = `${number},${number}`;
 
 export const toCellKey = (x: number, y: number): RuntimeCellKey => `${x},${y}`;
@@ -34,6 +36,11 @@ export interface RuntimeLevelState {
   consumedDashCrystalCells: Set<RuntimeCellKey>;
   brokenDashBlockCells: Set<RuntimeCellKey>;
   lastDashStartedAt: number | null;
+  currentStamina: number;
+  isWallSliding: boolean;
+  isClimbing: boolean;
+  wallSide: WallSide | null;
+  consumedStaminaRefillCells: Set<RuntimeCellKey>;
 }
 
 export const createRuntimeLevelState = (dashEnabled = false): RuntimeLevelState => ({
@@ -57,6 +64,11 @@ export const createRuntimeLevelState = (dashEnabled = false): RuntimeLevelState 
   consumedDashCrystalCells: new Set(),
   brokenDashBlockCells: new Set(),
   lastDashStartedAt: null,
+  currentStamina: 0,
+  isWallSliding: false,
+  isClimbing: false,
+  wallSide: null,
+  consumedStaminaRefillCells: new Set(),
 });
 
 /** Restore all mechanic progress to the start of the current test attempt. */
@@ -78,5 +90,10 @@ export function resetRuntimeAttempt(state: RuntimeLevelState, message: string, d
   state.consumedDashCrystalCells.clear();
   state.brokenDashBlockCells.clear();
   state.lastDashStartedAt = null;
+  state.currentStamina = 0;
+  state.isWallSliding = false;
+  state.isClimbing = false;
+  state.wallSide = null;
+  state.consumedStaminaRefillCells.clear();
   state.currentMessage = message;
 }

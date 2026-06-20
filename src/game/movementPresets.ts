@@ -29,6 +29,17 @@ const balancedTuning: Readonly<PlayerTuning> = {
   dashDurationMs: 210,
   dashEndSpeedRetention: 0.42,
   dashCooldownMs: 90,
+  wallSlideMaxSpeed: 155,
+  wallJumpHorizontalVelocity: 320,
+  wallJumpVerticalVelocity: 430,
+  wallJumpLockMs: 120,
+  maxStamina: 110,
+  climbUpSpeed: 145,
+  climbDownSpeed: 95,
+  climbStillCostPerSecond: 14,
+  climbUpCostPerSecond: 38,
+  climbStaminaRecoveryOnGround: 190,
+  exhaustedWallSlideSpeed: 245,
 };
 
 function tune(overrides: Partial<PlayerTuning>): Readonly<PlayerTuning> {
@@ -48,28 +59,28 @@ export const movementPresetRegistry: Readonly<Record<string, MovementPreset>> = 
     name: 'Precision',
     description: '更快起停，空中控制更直接，便于设计精密动作挑战。',
     recommendedFor: '精密跳跃',
-    tuning: tune({ maxMoveSpeed: 235, acceleration: 2500, groundDrag: 3200, airAcceleration: 2400, airDrag: 2500, coyoteTimeMs: 85, jumpBufferMs: 100 }),
+    tuning: tune({ maxMoveSpeed: 235, acceleration: 2500, groundDrag: 3200, airAcceleration: 2400, airDrag: 2500, coyoteTimeMs: 85, jumpBufferMs: 100, wallSlideMaxSpeed: 200, wallJumpHorizontalVelocity: 370, wallJumpVerticalVelocity: 455, wallJumpLockMs: 145, climbUpSpeed: 160 }),
   },
   floaty: {
     id: 'floaty',
     name: 'Floaty',
     description: '重力较轻、滞空更明显，适合轻松探索与解谜路径。',
     recommendedFor: '探索与解谜',
-    tuning: tune({ gravity: 980, fallGravityMultiplier: 1.35, jumpVelocity: 390, maxFallSpeed: 620, airAcceleration: 1500, airDrag: 1500, coyoteTimeMs: 135, jumpBufferMs: 140 }),
+    tuning: tune({ gravity: 980, fallGravityMultiplier: 1.35, jumpVelocity: 390, maxFallSpeed: 620, airAcceleration: 1500, airDrag: 1500, coyoteTimeMs: 135, jumpBufferMs: 140, wallSlideMaxSpeed: 120, wallJumpHorizontalVelocity: 290, wallJumpVerticalVelocity: 400, climbUpSpeed: 120, climbStillCostPerSecond: 10, climbUpCostPerSecond: 30 }),
   },
   heavy: {
     id: 'heavy',
     name: 'Heavy',
     description: '加速较慢、下落更有重量，适合厚重的平台节奏。',
     recommendedFor: '厚重平台感',
-    tuning: tune({ maxMoveSpeed: 195, acceleration: 1050, groundDrag: 1500, airAcceleration: 800, airDrag: 1400, gravity: 1650, fallGravityMultiplier: 2.05, maxFallSpeed: 980, jumpVelocity: 450 }),
+    tuning: tune({ maxMoveSpeed: 195, acceleration: 1050, groundDrag: 1500, airAcceleration: 800, airDrag: 1400, gravity: 1650, fallGravityMultiplier: 2.05, maxFallSpeed: 980, jumpVelocity: 450, wallSlideMaxSpeed: 235, wallJumpHorizontalVelocity: 300, maxStamina: 75, climbUpSpeed: 105, climbStillCostPerSecond: 20, climbUpCostPerSecond: 55, exhaustedWallSlideSpeed: 310 }),
   },
   dashFocused: {
     id: 'dashFocused',
     name: 'Dash Focused',
     description: '冲刺速度与持续时间更突出，便于围绕水晶和破坏块设计路线。',
     recommendedFor: 'dashCrystal / dashBlock 关卡',
-    tuning: tune({ dashSpeed: 780, dashDurationMs: 250, dashEndSpeedRetention: 0.5, dashCooldownMs: 70 }),
+    tuning: tune({ dashSpeed: 780, dashDurationMs: 250, dashEndSpeedRetention: 0.5, dashCooldownMs: 70, wallJumpHorizontalVelocity: 335, wallJumpVerticalVelocity: 440 }),
   },
 };
 

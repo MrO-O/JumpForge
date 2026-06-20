@@ -16,6 +16,7 @@ JumpForge 是浏览器端 2D 平台跳跃关卡设计工具。核心不是单纯
 - Phase 4A：key / lockedDoor、switch / switchDoor、spring、oneWayPlatform 基础实现。
 - Phase 4B：dash、dashCrystal、dashBlock 基础实现。
 - Phase 5A：Movement Tuning Profiles、关卡级预设与自定义调参、旧关卡 Balanced fallback。
+- Phase 5B：wallJump、wallClimb、climbWall、staminaRefill 与运行期体力状态。
 - 后续能力扩展必须由用户明确提出。
 
 ## Commands
@@ -56,13 +57,13 @@ npm run preview
 - tile 行为必须通过 tileRegistry 的 `runtime.kind` 和集中 runtime handler 管理。
 - 不要把大量 `if tileId === "..."` 散落在 TestScene、PlayerController 或 React 组件中。
 - 新增 tile 时同步更新：tileRegistry、必要的 validateLevel 规则、runtime handler、editor palette 表现、README 或相关文档。
-- v1 tile：empty、solid、oneWayPlatform、spike、spawn、goal、spring、key、lockedDoor、switch、switchDoor、dashCrystal、dashBlock。
+- v1 tile：empty、solid、oneWayPlatform、spike、spawn、goal、spring、key、lockedDoor、switch、switchDoor、dashCrystal、dashBlock、climbWall、staminaRefill。
 
 ## Ability System Rules
 
 - move 和 jump 是基础能力，始终启用。
 - dash 是第一个可选动作能力，已在 Phase 4B 实现。
-- wallJump、doubleJump、carry 当前为 reserved，不要擅自实现。
+- wallJump 与 wallClimb 已实现，必须通过 enabledAbilities 控制；doubleJump、carry 当前为 reserved，不要擅自实现。
 - ability 专用 tile 必须检查 enabledAbilities。
 - dashCrystal 和 dashBlock 只在 dash 启用时才是有效机制。
 
@@ -82,6 +83,7 @@ npm run preview
 - 不要把所有逻辑塞进 TestScene。
 - 运动参数集中在 tuning 对象中，不要散落魔法数字。
 - movementProfile 属于 LevelDocument；新增预设或调参字段时同步更新 tuning registry、校验、编辑器 UI、README 和相关设计文档。
+- wallSlide、wallJump、climb 与 stamina 参数属于 PlayerTuning；墙面识别与 staminaRefill 由 runtime builder / handler 集中维护，不要散落到 TestScene。
 - 不要宣称或尝试复刻任何商业游戏的具体手感。
 - Phaser mount/unmount 必须清理干净，避免重复 canvas 或幽灵碰撞体。
 

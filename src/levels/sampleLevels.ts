@@ -24,4 +24,14 @@ const dashLevel = paint(
   ],
 );
 
-export const sampleLevels: readonly LevelDocument[] = [basicJumpLevel, keyDoorLevel, dashLevel];
+const wallTrainingLevel = paint(
+  createEmptyLevel({ id: 'sample-wall-training', title: '墙面训练', author: 'JumpForge', width: 20, height: 12, enabledAbilities: ['move', 'jump', 'wallJump', 'wallClimb'] }),
+  [
+    [18, 10, 'empty'], [16, 6, 'goal'],
+    [6, 5, 'climbWall'], [6, 6, 'climbWall'], [6, 7, 'climbWall'], [6, 8, 'climbWall'], [6, 9, 'climbWall'], [6, 10, 'climbWall'],
+    [8, 7, 'solid'], [9, 7, 'solid'], [10, 7, 'solid'], [11, 7, 'solid'], [12, 7, 'solid'], [13, 7, 'solid'], [14, 7, 'solid'], [15, 7, 'solid'], [16, 7, 'solid'],
+    [9, 6, 'staminaRefill'],
+  ],
+);
+
+export const sampleLevels: readonly LevelDocument[] = [basicJumpLevel, keyDoorLevel, dashLevel, wallTrainingLevel];

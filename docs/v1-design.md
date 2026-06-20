@@ -360,6 +360,10 @@ v1 registry：
 
 移动、跳跃、dash 与 spring 的关键数值是关卡设计的一部分，保存在 `LevelDocument.movementProfile` 中。profile 以预设 ID 和可选的 `PlayerTuning` 覆盖值表示；运行时只读取关卡快照并解析出经过范围钳制的 tuning，不会将运行态写回编辑文档。缺少 profile 的旧关卡默认使用 Balanced，因而可保持 schemaVersion 1。新增预设时必须同步维护 preset registry、编辑器面板、校验与文档；预设只描述通用设计方向，不宣称复刻既有作品的手感。
 
+### Wall Movement + Stamina
+
+`wallJump` 与 `wallClimb` 是可按关卡启用的独立能力。墙跳可利用有效实体墙面；攀爬只识别 `climbWall`，并在运行期消耗体力。`staminaRefill` 在一次测试生命内恢复体力后隐藏，死亡或重开时恢复。墙面接触探针、体力状态和所有临时 tile 消耗均属于 Phaser runtime state，不得写回 LevelDocument。
+
 ## 10. v1 Development Phases
 
 ### Phase 1：项目骨架与领域类型

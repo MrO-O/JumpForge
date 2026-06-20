@@ -24,6 +24,8 @@ export class TestScene extends Phaser.Scene {
   private respawnEvent?: Phaser.Time.TimerEvent;
   private worldHeight = 0;
   private dashEnabled = false;
+  private wallJumpEnabled = false;
+  private wallClimbEnabled = false;
   private movementPresetName = 'Balanced';
   private movementTuning?: PlayerTuning;
 
@@ -35,6 +37,8 @@ export class TestScene extends Phaser.Scene {
   create(): void {
     const { level } = this.options;
     this.dashEnabled = level.enabledAbilities.includes('dash');
+    this.wallJumpEnabled = level.enabledAbilities.includes('wallJump');
+    this.wallClimbEnabled = level.enabledAbilities.includes('wallClimb');
     const movement = resolveMovementProfile(level.movementProfile);
     const isCustomMovement = level.movementProfile?.tuningOverrides !== undefined;
     this.movementPresetName = isCustomMovement
@@ -97,8 +101,11 @@ export class TestScene extends Phaser.Scene {
     this.player = player;
     this.controller = new PlayerController(this, player, {
       dashEnabled: this.dashEnabled,
+      wallJumpEnabled: this.wallJumpEnabled,
+      wallClimbEnabled: this.wallClimbEnabled,
       runtimeState: this.state,
       tuning: this.movementTuning ?? resolveMovementProfile(undefined).tuning,
+      getWallContact: () => this.tileRuntime?.getWallContact() ?? null,
     });
   }
 
@@ -159,9 +166,10 @@ export class TestScene extends Phaser.Scene {
 
   private refreshHud(): void {
     this.hud?.setText([
-      '← → move · Space / ↑ jump · R restart · Esc return',
+      '← → move · Space / ↑ jump · C grab / climb · R restart · Esc return',
       `Movement: ${this.movementPresetName}`,
       `Shift / X dash · Dash: ${this.controller?.dashStatus ?? 'Disabled'}`,
+      `Wall: ${this.state.isClimbing ? 'CLIMB' : this.state.isWallSliding ? 'SLIDE' : '—'} · Stamina: ${this.controller?.wallClimbEnabled ? `${Math.ceil(this.state.currentStamina)}/${Math.round(this.controller.tuning.maxStamina)}` : '—'}`,
       `Keys: ${this.state.keyCount} · Switch doors: ${this.state.switchDoorsOpen ? 'OPEN' : 'CLOSED'}`,
       this.state.currentMessage,
       `Time: ${(this.state.elapsedMs / 1000).toFixed(1)}s · Restarts: ${this.state.restartCount}`,

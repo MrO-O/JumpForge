@@ -18,6 +18,8 @@ export const tileRegistry: TileRegistry = {
   switchDoor: defineTile({ id: 'switchDoor', name: '开关门', category: 'interaction', collision: 'solid', hazardous: false, interactive: false, tags: ['door', 'toggle'], editor: { color: '#06b6d4', glyph: '▥', label: '开关门', paletteOrder: 100 }, runtime: { kind: 'switchDoor' } }),
   dashCrystal: defineTile({ id: 'dashCrystal', name: '冲刺水晶', category: 'ability', collision: 'none', hazardous: false, interactive: true, requiredAbilities: ['dash'], tags: ['dash', 'refill'], editor: { color: '#22d3ee', glyph: '◇', label: '冲刺水晶', paletteOrder: 110 }, runtime: { kind: 'dashCrystal' } }),
   dashBlock: defineTile({ id: 'dashBlock', name: '冲刺破坏块', category: 'ability', collision: 'solid', hazardous: false, interactive: true, requiredAbilities: ['dash'], tags: ['dash', 'breakable'], editor: { color: '#8b5cf6', glyph: '▧', label: '冲刺破坏块', paletteOrder: 120 }, runtime: { kind: 'dashBlock' } }),
+  climbWall: defineTile({ id: 'climbWall', name: '可攀墙面', category: 'ability', collision: 'solid', hazardous: false, interactive: true, requiredAbilities: ['wallClimb'], tags: ['wall', 'climb', 'ability'], editor: { color: '#0f766e', glyph: '╫', label: '可攀墙面', paletteOrder: 130 }, runtime: { kind: 'climbWall' } }),
+  staminaRefill: defineTile({ id: 'staminaRefill', name: '体力补给', category: 'ability', collision: 'none', hazardous: false, interactive: true, requiredAbilities: ['wallClimb'], tags: ['stamina', 'refill', 'ability'], editor: { color: '#34d399', glyph: '✦', label: '体力补给', paletteOrder: 140 }, runtime: { kind: 'staminaRefill' } }),
 };
 
 export function getTileDefinition(tileId: string): TileDefinition | undefined {

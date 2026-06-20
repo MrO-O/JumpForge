@@ -31,9 +31,17 @@ export const abilityRegistry: Readonly<Record<AbilityId, AbilityDefinition>> = {
   wallJump: {
     id: 'wallJump',
     name: '蹬墙跳',
-    description: '预留：从墙面跳离。',
+    description: '允许玩家在空中接触实体墙面时向反方向蹬墙跳，并在下落时墙滑。',
     defaultEnabled: false,
-    status: 'reserved',
+    dependsOn: ['jump'],
+    status: 'implemented',
+  },
+  wallClimb: {
+    id: 'wallClimb',
+    name: '抓墙与攀爬',
+    description: '按住 C 在 climbWall 上抓墙或攀爬，消耗可恢复的体力。',
+    defaultEnabled: false,
+    status: 'implemented',
   },
   doubleJump: {
     id: 'doubleJump',

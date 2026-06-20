@@ -13,7 +13,9 @@ export type TileId =
   | 'switch'
   | 'switchDoor'
   | 'dashCrystal'
-  | 'dashBlock';
+  | 'dashBlock'
+  | 'climbWall'
+  | 'staminaRefill';
 
 export type TileCategory = 'terrain' | 'hazard' | 'marker' | 'interaction' | 'ability';
 export type CollisionKind = 'none' | 'solid' | 'oneWay';

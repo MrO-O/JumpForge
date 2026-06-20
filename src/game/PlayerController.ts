@@ -3,24 +3,33 @@ import type { RuntimeLevelState } from './runtimeTypes';
 import type { PlayerTuning } from './playerTuning';
 
 export type { PlayerTuning } from './playerTuning';
+export interface WallContact {
+  side: 'left' | 'right';
+  climbable: boolean;
+}
 
 export type PlayerBody = Phaser.GameObjects.Rectangle & { body: Phaser.Physics.Arcade.Body };
 
 export interface PlayerControllerOptions {
   dashEnabled: boolean;
+  wallJumpEnabled: boolean;
+  wallClimbEnabled: boolean;
   runtimeState: RuntimeLevelState;
   tuning: Readonly<PlayerTuning>;
+  getWallContact: () => WallContact | null;
 }
 
 export class PlayerController {
   private readonly cursors: Phaser.Types.Input.Keyboard.CursorKeys;
   private readonly jumpKey: Phaser.Input.Keyboard.Key;
+  private readonly grabKey: Phaser.Input.Keyboard.Key;
   private readonly dashKeys: Phaser.Input.Keyboard.Key[];
   readonly tuning: Readonly<PlayerTuning>;
   private lastGroundedAt = Number.NEGATIVE_INFINITY;
   private jumpBufferedUntil = Number.NEGATIVE_INFINITY;
   private enabled = true;
   private facingX = 1;
+  private wallJumpLockUntil = Number.NEGATIVE_INFINITY;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -30,12 +39,14 @@ export class PlayerController {
     this.tuning = options.tuning;
     this.cursors = scene.input.keyboard!.createCursorKeys();
     this.jumpKey = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    this.grabKey = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.C);
     this.dashKeys = [
       scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT),
       scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.X),
     ];
     this.player.body.setMaxVelocity(this.tuning.dashSpeed, this.tuning.maxFallSpeed);
     this.player.body.setCollideWorldBounds(true);
+    this.options.runtimeState.currentStamina = this.tuning.maxStamina;
   }
 
   get isDashing(): boolean {
@@ -44,6 +55,10 @@ export class PlayerController {
 
   get dashEnabled(): boolean {
     return this.options.dashEnabled;
+  }
+
+  get wallClimbEnabled(): boolean {
+    return this.options.wallClimbEnabled;
   }
 
   get dashStatus(): 'Disabled' | 'Ready' | 'Used' | 'Dashing' {
@@ -59,6 +74,10 @@ export class PlayerController {
     const now = this.scene.time.now;
     const deltaSeconds = Math.min(deltaMs, 50) / 1000;
     const grounded = body.blocked.down || body.touching.down;
+    const wallContact = grounded ? null : this.options.getWallContact();
+    state.isWallSliding = false;
+    state.isClimbing = false;
+    state.wallSide = wallContact?.side ?? null;
 
     if (state.isDashing) {
       this.updateDash(deltaMs);
@@ -68,6 +87,7 @@ export class PlayerController {
     if (grounded) {
       this.lastGroundedAt = now;
       if (this.dashEnabled) state.dashAvailable = true;
+      state.currentStamina = Math.min(this.tuning.maxStamina, state.currentStamina + this.tuning.climbStaminaRecoveryOnGround * deltaSeconds);
     }
     if (this.dashEnabled && this.isDashPressed() && state.dashAvailable && now >= state.dashCooldownMs) {
       this.startDash(now);
@@ -80,17 +100,25 @@ export class PlayerController {
 
     const direction = Number(this.cursors.right?.isDown) - Number(this.cursors.left?.isDown);
     if (direction !== 0) this.facingX = direction;
-    const targetVelocity = direction * this.tuning.maxMoveSpeed;
-    const horizontalRate = direction === 0
-      ? (grounded ? this.tuning.groundDrag : this.tuning.airDrag)
-      : (grounded ? this.tuning.acceleration : this.tuning.airAcceleration);
-    body.setVelocityX(Phaser.Math.Linear(body.velocity.x, targetVelocity, Math.min(1, horizontalRate * deltaSeconds / this.tuning.maxMoveSpeed)));
 
     const canJump = now <= this.jumpBufferedUntil && now - this.lastGroundedAt <= this.tuning.coyoteTimeMs;
     if (canJump) {
       body.setVelocityY(-this.tuning.jumpVelocity);
       this.jumpBufferedUntil = Number.NEGATIVE_INFINITY;
       this.lastGroundedAt = Number.NEGATIVE_INFINITY;
+    } else if (this.options.wallJumpEnabled && wallContact && now <= this.jumpBufferedUntil) {
+      this.performWallJump(wallContact, now);
+      return;
+    }
+
+    if (this.updateClimb(wallContact, deltaSeconds)) return;
+
+    if (now >= this.wallJumpLockUntil) {
+      const targetVelocity = direction * this.tuning.maxMoveSpeed;
+      const horizontalRate = direction === 0
+        ? (grounded ? this.tuning.groundDrag : this.tuning.airDrag)
+        : (grounded ? this.tuning.acceleration : this.tuning.airAcceleration);
+      body.setVelocityX(Phaser.Math.Linear(body.velocity.x, targetVelocity, Math.min(1, horizontalRate * deltaSeconds / this.tuning.maxMoveSpeed)));
     }
 
     if ((Phaser.Input.Keyboard.JustUp(this.jumpKey) || Phaser.Input.Keyboard.JustUp(this.cursors.up!)) && body.velocity.y < 0) {
@@ -99,6 +127,11 @@ export class PlayerController {
     const holdingJump = this.jumpKey.isDown || this.cursors.up?.isDown;
     const gravityMultiplier = body.velocity.y < 0 && holdingJump ? 1 : this.tuning.fallGravityMultiplier;
     body.setVelocityY(Math.min(this.tuning.maxFallSpeed, body.velocity.y + this.tuning.gravity * gravityMultiplier * deltaSeconds));
+
+    if (this.options.wallJumpEnabled && wallContact && body.velocity.y > 0) {
+      state.isWallSliding = true;
+      body.setVelocityY(Math.min(body.velocity.y, state.currentStamina <= 0 ? this.tuning.exhaustedWallSlideSpeed : this.tuning.wallSlideMaxSpeed));
+    }
   }
 
   bounce(): void {
@@ -109,6 +142,12 @@ export class PlayerController {
   refillDash(): void {
     if (!this.dashEnabled) return;
     this.options.runtimeState.dashAvailable = true;
+  }
+
+  refillStamina(): void {
+    if (!this.options.wallClimbEnabled) return;
+    this.options.runtimeState.currentStamina = this.tuning.maxStamina;
+    this.options.runtimeState.currentMessage = 'Stamina refilled.';
   }
 
   setEnabled(enabled: boolean): void {
@@ -126,6 +165,7 @@ export class PlayerController {
     this.jumpBufferedUntil = Number.NEGATIVE_INFINITY;
     this.enabled = true;
     this.facingX = 1;
+    this.wallJumpLockUntil = Number.NEGATIVE_INFINITY;
     const state = this.options.runtimeState;
     state.dashAvailable = this.dashEnabled;
     state.isDashing = false;
@@ -133,11 +173,46 @@ export class PlayerController {
     state.dashTimeRemainingMs = 0;
     state.dashCooldownMs = 0;
     state.lastDashStartedAt = null;
+    state.currentStamina = this.tuning.maxStamina;
+    state.isWallSliding = false;
+    state.isClimbing = false;
+    state.wallSide = null;
     this.player.body.setVelocity(0, 0);
   }
 
   private isDashPressed(): boolean {
     return this.dashKeys.some((key) => Phaser.Input.Keyboard.JustDown(key));
+  }
+
+  private performWallJump(wallContact: WallContact, now: number): void {
+    const direction = wallContact.side === 'left' ? 1 : -1;
+    this.facingX = direction;
+    this.player.body.setVelocity(direction * this.tuning.wallJumpHorizontalVelocity, -this.tuning.wallJumpVerticalVelocity);
+    this.wallJumpLockUntil = now + this.tuning.wallJumpLockMs;
+    this.jumpBufferedUntil = Number.NEGATIVE_INFINITY;
+    this.options.runtimeState.isWallSliding = false;
+    this.options.runtimeState.isClimbing = false;
+    this.options.runtimeState.wallSide = null;
+    this.options.runtimeState.currentMessage = 'Wall jump!';
+  }
+
+  private updateClimb(wallContact: WallContact | null, deltaSeconds: number): boolean {
+    const state = this.options.runtimeState;
+    if (!this.options.wallClimbEnabled || !wallContact?.climbable || !this.grabKey.isDown || state.currentStamina <= 0) return false;
+    const up = this.cursors.up?.isDown ?? false;
+    const down = this.cursors.down?.isDown ?? false;
+    const cost = (up ? this.tuning.climbUpCostPerSecond : this.tuning.climbStillCostPerSecond) * deltaSeconds;
+    state.currentStamina = Math.max(0, state.currentStamina - cost);
+    if (state.currentStamina <= 0) {
+      state.currentMessage = 'Stamina exhausted.';
+      return false;
+    }
+    state.isClimbing = true;
+    state.isWallSliding = false;
+    state.wallSide = wallContact.side;
+    this.player.body.setVelocityX(0);
+    this.player.body.setVelocityY(up ? -this.tuning.climbUpSpeed : down ? this.tuning.climbDownSpeed : 0);
+    return true;
   }
 
   private startDash(now: number): void {

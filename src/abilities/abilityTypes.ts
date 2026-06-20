@@ -3,6 +3,7 @@ export const abilityIds = [
   'jump',
   'dash',
   'wallJump',
+  'wallClimb',
   'doubleJump',
   'carry',
 ] as const;
