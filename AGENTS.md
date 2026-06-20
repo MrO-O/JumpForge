@@ -15,6 +15,7 @@ JumpForge 是浏览器端 2D 平台跳跃关卡设计工具。核心不是单纯
 - Phase 3A：Phaser 测试模式、基础移动、跳跃、死亡、通关、R 重开。
 - Phase 4A：key / lockedDoor、switch / switchDoor、spring、oneWayPlatform 基础实现。
 - Phase 4B：dash、dashCrystal、dashBlock 基础实现。
+- Phase 5A：Movement Tuning Profiles、关卡级预设与自定义调参、旧关卡 Balanced fallback。
 - 后续能力扩展必须由用户明确提出。
 
 ## Commands
@@ -80,6 +81,8 @@ npm run preview
 - RuntimeLevelBuilder / tileRuntimeHandlers 负责 tile runtime。
 - 不要把所有逻辑塞进 TestScene。
 - 运动参数集中在 tuning 对象中，不要散落魔法数字。
+- movementProfile 属于 LevelDocument；新增预设或调参字段时同步更新 tuning registry、校验、编辑器 UI、README 和相关设计文档。
+- 不要宣称或尝试复刻任何商业游戏的具体手感。
 - Phaser mount/unmount 必须清理干净，避免重复 canvas 或幽灵碰撞体。
 
 ## Design Boundaries

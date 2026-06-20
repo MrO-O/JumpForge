@@ -11,9 +11,10 @@ export class LevelImportError extends Error {
 }
 
 export function exportLevelToJson(level: LevelDocument): string {
-  const validation = validateLevel(level);
+  const normalized = migrateLevelDocument(level);
+  const validation = validateLevel(normalized);
   if (!validation.valid) throw new Error(`无法导出无效关卡：${validation.errors.map((issue) => issue.message).join('；')}`);
-  return `${JSON.stringify(level, null, 2)}\n`;
+  return `${JSON.stringify(normalized, null, 2)}\n`;
 }
 
 export function importLevelFromJson(jsonText: string, existingIds: Iterable<string> = storedLevelIds()): LevelDocument {

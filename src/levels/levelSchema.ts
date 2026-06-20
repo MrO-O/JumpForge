@@ -13,6 +13,34 @@ export const tileLayerSchema = z.object({
   tiles: z.array(z.enum(tileIds)),
 });
 
+const tuningOverridesSchema = z.object({
+  maxMoveSpeed: z.number().finite().optional(),
+  acceleration: z.number().finite().optional(),
+  groundDrag: z.number().finite().optional(),
+  airAcceleration: z.number().finite().optional(),
+  airDrag: z.number().finite().optional(),
+  jumpVelocity: z.number().finite().optional(),
+  gravity: z.number().finite().optional(),
+  fallGravityMultiplier: z.number().finite().optional(),
+  lowJumpMultiplier: z.number().finite().optional(),
+  maxFallSpeed: z.number().finite().optional(),
+  coyoteTimeMs: z.number().finite().optional(),
+  jumpBufferMs: z.number().finite().optional(),
+  deathMargin: z.number().finite().optional(),
+  respawnDelayMs: z.number().finite().optional(),
+  springVelocity: z.number().finite().optional(),
+  dashSpeed: z.number().finite().optional(),
+  dashDurationMs: z.number().finite().optional(),
+  dashEndSpeedRetention: z.number().finite().optional(),
+  dashCooldownMs: z.number().finite().optional(),
+}).strict();
+
+const movementProfileSchema = z.object({
+  presetId: z.string().min(1),
+  customName: z.string().min(1).max(80).optional(),
+  tuningOverrides: tuningOverridesSchema.optional(),
+}).strict();
+
 export const levelSchema = z.object({
   schemaVersion: z.literal(CURRENT_SCHEMA_VERSION),
   id: z.string().min(1),
@@ -22,6 +50,7 @@ export const levelSchema = z.object({
   height: z.number().int().positive(),
   tileSize: z.number().int().positive(),
   enabledAbilities: z.array(z.enum(abilityIds)),
+  movementProfile: movementProfileSchema.optional(),
   layers: z.array(tileLayerSchema).min(1),
   metadata: z.object({
     createdAt: z.string().datetime().optional(),

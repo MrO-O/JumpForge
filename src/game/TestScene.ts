@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
+import { resolveMovementProfile } from './movementPresets';
 import type { LevelDocument } from '../levels/levelTypes';
 import { PlayerController, type PlayerBody } from './PlayerController';
+import type { PlayerTuning } from './playerTuning';
 import { buildRuntimeLevel, type RuntimeLevelBuildResult } from './RuntimeLevelBuilder';
 import { resetRuntimeAttempt, createRuntimeLevelState, type RuntimeLevelState } from './runtimeTypes';
 import { TileRuntimeController } from './tileRuntimeHandlers';
@@ -22,6 +24,8 @@ export class TestScene extends Phaser.Scene {
   private respawnEvent?: Phaser.Time.TimerEvent;
   private worldHeight = 0;
   private dashEnabled = false;
+  private movementPresetName = 'Balanced';
+  private movementTuning?: PlayerTuning;
 
   constructor(options: TestSceneOptions) {
     super({ key: 'jumpforge-test-scene' });
@@ -31,6 +35,12 @@ export class TestScene extends Phaser.Scene {
   create(): void {
     const { level } = this.options;
     this.dashEnabled = level.enabledAbilities.includes('dash');
+    const movement = resolveMovementProfile(level.movementProfile);
+    const isCustomMovement = level.movementProfile?.tuningOverrides !== undefined;
+    this.movementPresetName = isCustomMovement
+      ? 'Custom'
+      : movement.preset.name;
+    this.movementTuning = movement.tuning;
     this.state = createRuntimeLevelState(this.dashEnabled);
     const worldWidth = level.width * level.tileSize;
     this.worldHeight = level.height * level.tileSize;
@@ -85,7 +95,11 @@ export class TestScene extends Phaser.Scene {
     this.physics.add.existing(player);
     player.body.setSize(Math.round(size * 0.62), Math.round(size * 0.82), true);
     this.player = player;
-    this.controller = new PlayerController(this, player, { dashEnabled: this.dashEnabled, runtimeState: this.state });
+    this.controller = new PlayerController(this, player, {
+      dashEnabled: this.dashEnabled,
+      runtimeState: this.state,
+      tuning: this.movementTuning ?? resolveMovementProfile(undefined).tuning,
+    });
   }
 
   private killPlayer(message: string): void {
@@ -146,6 +160,7 @@ export class TestScene extends Phaser.Scene {
   private refreshHud(): void {
     this.hud?.setText([
       '← → move · Space / ↑ jump · R restart · Esc return',
+      `Movement: ${this.movementPresetName}`,
       `Shift / X dash · Dash: ${this.controller?.dashStatus ?? 'Disabled'}`,
       `Keys: ${this.state.keyCount} · Switch doors: ${this.state.switchDoorsOpen ? 'OPEN' : 'CLOSED'}`,
       this.state.currentMessage,

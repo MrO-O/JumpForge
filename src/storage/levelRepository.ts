@@ -27,9 +27,10 @@ function writeIndex(ids: string[]): void {
 }
 
 export function saveLevel(level: LevelDocument): LevelDocument {
-  const validation = validateLevel(level);
+  const normalized = migrateLevelDocument(level);
+  const validation = validateLevel(normalized);
   if (!validation.valid) throw new Error(`无法保存无效关卡：${validation.errors.map((issue) => issue.message).join('；')}`);
-  const saved = cloneLevel({ ...level, metadata: { ...level.metadata, updatedAt: new Date().toISOString() } });
+  const saved = cloneLevel({ ...normalized, metadata: { ...normalized.metadata, updatedAt: new Date().toISOString() } });
   const storage = getStorage();
   storage.setItem(`${STORAGE_PREFIX}${saved.id}`, JSON.stringify(saved));
   writeIndex([...readIndex(), saved.id]);

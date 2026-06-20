@@ -1,4 +1,5 @@
 import type { AbilityId } from '../abilities/abilityTypes';
+import type { PlayerTuning } from '../game/playerTuning';
 import type { TileId } from '../tiles/tileTypes';
 
 export const CURRENT_SCHEMA_VERSION = 1 as const;
@@ -19,6 +20,13 @@ export interface LevelMetadata {
   tags?: string[];
 }
 
+/** Persisted level-design choice; runtime always resolves this to a safe tuning snapshot. */
+export interface MovementProfile {
+  presetId: string;
+  customName?: string;
+  tuningOverrides?: Partial<PlayerTuning>;
+}
+
 export interface LevelDocument {
   schemaVersion: SchemaVersion;
   id: string;
@@ -28,6 +36,7 @@ export interface LevelDocument {
   height: number;
   tileSize: number;
   enabledAbilities: AbilityId[];
+  movementProfile?: MovementProfile;
   layers: TileLayerData[];
   metadata?: LevelMetadata;
 }

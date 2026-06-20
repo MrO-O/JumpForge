@@ -1,4 +1,5 @@
 import { ZodError } from 'zod';
+import { defaultMovementProfile } from '../game/movementPresets';
 import { parseLevelDocument } from './levelSchema';
 import type { LevelDocument } from './levelTypes';
 
@@ -22,7 +23,8 @@ export function migrateLevelDocument(value: unknown): LevelDocument {
     throw new LevelMigrationError(`不支持的 schemaVersion：${String(schemaVersion)}。当前仅支持 1。`);
   }
   try {
-    return parseLevelDocument(value);
+    const parsed = parseLevelDocument(value);
+    return parsed.movementProfile ? parsed : { ...parsed, movementProfile: defaultMovementProfile() };
   } catch (error) {
     if (error instanceof ZodError) {
       throw new LevelMigrationError('关卡 JSON 结构无效。', error.issues.map((issue) => `${issue.path.join('.') || 'root'}：${issue.message}`));

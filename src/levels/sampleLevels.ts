@@ -11,12 +11,12 @@ const basicJumpLevel = paint(
 );
 
 const keyDoorLevel = paint(
-  createEmptyLevel({ id: 'sample-key-door', title: '钥匙与开关走廊', author: 'JumpForge', width: 22, height: 10 }),
+  createEmptyLevel({ id: 'sample-key-door', title: '钥匙与开关走廊', author: 'JumpForge', width: 22, height: 10, movementProfile: { presetId: 'floaty' } }),
   [[4, 8, 'key'], [8, 8, 'lockedDoor'], [12, 8, 'switch'], [15, 8, 'switchDoor'], [10, 7, 'oneWayPlatform'], [11, 7, 'oneWayPlatform']],
 );
 
 const dashLevel = paint(
-  createEmptyLevel({ id: 'sample-dash', title: '冲刺路线', author: 'JumpForge', width: 20, height: 10, enabledAbilities: ['move', 'jump', 'dash'] }),
+  createEmptyLevel({ id: 'sample-dash', title: '冲刺路线', author: 'JumpForge', width: 20, height: 10, enabledAbilities: ['move', 'jump', 'dash'], movementProfile: { presetId: 'dashFocused' } }),
   [
     [6, 9, 'empty'], [7, 9, 'empty'], [8, 9, 'empty'], [9, 9, 'empty'],
     [11, 8, 'dashCrystal'],

@@ -1,4 +1,5 @@
 import { abilityRegistry, validateAbilities } from '../abilities/abilityRegistry';
+import { defaultMovementProfile, validateMovementProfile } from '../game/movementPresets';
 import { getTileDefinition, isTileAllowedForAbilities } from '../tiles/tileRegistry';
 import type { TileId } from '../tiles/tileTypes';
 import { migrateLevelDocument } from './levelMigrations';
@@ -15,7 +16,7 @@ export function createLevelId(prefix = 'level'): string {
   return `${prefix}-${suffix}`;
 }
 
-export function createEmptyLevel(overrides: Partial<Pick<LevelDocument, 'id' | 'title' | 'author' | 'width' | 'height' | 'tileSize' | 'enabledAbilities'>> = {}): LevelDocument {
+export function createEmptyLevel(overrides: Partial<Pick<LevelDocument, 'id' | 'title' | 'author' | 'width' | 'height' | 'tileSize' | 'enabledAbilities' | 'movementProfile'>> = {}): LevelDocument {
   const width = overrides.width ?? DEFAULT_WIDTH;
   const height = overrides.height ?? DEFAULT_HEIGHT;
   const now = new Date().toISOString();
@@ -35,6 +36,7 @@ export function createEmptyLevel(overrides: Partial<Pick<LevelDocument, 'id' | '
     height,
     tileSize: overrides.tileSize ?? DEFAULT_TILE_SIZE,
     enabledAbilities: overrides.enabledAbilities ?? ['move', 'jump'],
+    movementProfile: overrides.movementProfile ?? defaultMovementProfile(),
     layers: [{ id: 'terrain', name: 'Terrain', kind: 'tile', visible: true, tiles }],
     metadata: { createdAt: now, updatedAt: now },
   };
@@ -155,6 +157,8 @@ export function validateLevel(value: unknown): LevelValidationResult {
     const ability = abilityRegistry[abilityId];
     if (!ability) errors.push({ path: 'enabledAbilities', message: `未知能力：${abilityId}` });
   }
+
+  errors.push(...validateMovementProfile(level.movementProfile));
 
   const seenLayerIds = new Set<string>();
   let spawnCount = 0;

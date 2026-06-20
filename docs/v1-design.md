@@ -356,6 +356,10 @@ v1 registry：
 
 编辑器与 runtime 必须共用 `tileSize`、坐标原点（左上）和 tile registry。为避免显示不一致，v1 使用 registry 的 `editor.color` 作为 Phaser 临时图形的基准色；之后替换美术时仍保留同一 ID 与碰撞语义。
 
+### Movement Tuning Profiles
+
+移动、跳跃、dash 与 spring 的关键数值是关卡设计的一部分，保存在 `LevelDocument.movementProfile` 中。profile 以预设 ID 和可选的 `PlayerTuning` 覆盖值表示；运行时只读取关卡快照并解析出经过范围钳制的 tuning，不会将运行态写回编辑文档。缺少 profile 的旧关卡默认使用 Balanced，因而可保持 schemaVersion 1。新增预设时必须同步维护 preset registry、编辑器面板、校验与文档；预设只描述通用设计方向，不宣称复刻既有作品的手感。
+
 ## 10. v1 Development Phases
 
 ### Phase 1：项目骨架与领域类型
@@ -378,6 +382,10 @@ v1 registry：
 
 实现 localStorage repository、关卡列表、复制/删除、JSON 导入导出、版本迁移提示。加入 2–3 个只读模板关卡。
 
+### Phase 5A：Movement Tuning Profiles
+
+为 LevelDocument 增加可选 movement profile，提供 Balanced、Precision、Floaty、Heavy 与 Dash Focused 预设，以及受范围限制的关卡级自定义覆盖值。测试运行时从快照解析 tuning，编辑器、保存、导入和导出共用同一份关卡数据。
+
 ### Phase 6：打磨与 build
 
 集中调动作参数、错误提示和编辑/运行画面一致性；验证刷新后保存内容、导出后可再导入、生产构建可运行。只在此时考虑简单 UI 美化。
@@ -389,7 +397,7 @@ v1 registry：
 | Phaser 与 React 状态同步 | 编辑文档和运行态严格分离；测试只接收快照，退出测试不回写。Phaser 容器由单一 React host 统一创建/销毁。 |
 | tile 行为扩展导致条件分支爆炸 | 以 `TileDefinition.runtime.kind` 和集中 handler 表分派；新增 tile 必须先补 registry、校验和 handler。 |
 | 地图格式兼容 | 每份地图强制 `schemaVersion`；导入先校验再迁移，迁移函数链保留且有样本 JSON 测试。 |
-| 平台跳跃手感调试 | 所有运动参数集中为 `PlayerTuning`；先锁定帧率无关的 delta 更新和可观测调试面板，再调数值。 |
+| 平台跳跃手感调试 | 所有运动参数集中为 `PlayerTuning` 与 preset registry；每关保存 profile，运行时从快照解析并钳制数值，避免 NaN 或极端输入破坏物理。 |
 | 编辑器与 runtime 显示不一致 | 共用 registry、tileSize、坐标换算和临时色彩；每新增 tile 至少建立编辑预览与 runtime 验证关。 |
 | 机制组合不可控 | v1 将 key/door 与 switch/door 定义为全局简单语义；带通道、颜色、定时器等实例参数延后到对象层。 |
 | localStorage 容量与损坏 | v1 仅存小型网格 JSON；写入前校验，读取失败时保留原始备份并提示导出恢复。 |
