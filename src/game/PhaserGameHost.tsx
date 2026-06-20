@@ -23,6 +23,7 @@ export function PhaserGameHost({ level, onExit, onComplete }: PhaserGameHostProp
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return undefined;
+    let disposed = false;
     const snapshot = snapshotRef.current;
     const worldWidth = snapshot.width * snapshot.tileSize;
     const worldHeight = snapshot.height * snapshot.tileSize;
@@ -35,11 +36,15 @@ export function PhaserGameHost({ level, onExit, onComplete }: PhaserGameHostProp
       physics: { default: 'arcade', arcade: { gravity: { x: 0, y: 0 }, debug: false } },
       scene: [new TestScene({
         level: snapshot,
-        onExit: () => exitRef.current(),
-        onComplete: () => completeRef.current?.(),
+        onExit: () => { if (!disposed) exitRef.current(); },
+        onComplete: () => { if (!disposed) completeRef.current?.(); },
       })],
     });
-    return () => game.destroy(true);
+    return () => {
+      disposed = true;
+      game.destroy(true);
+      container.replaceChildren();
+    };
   }, []);
 
   return <div className="phaser-game-host" ref={containerRef} />;

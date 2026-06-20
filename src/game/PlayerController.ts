@@ -150,6 +150,7 @@ export class PlayerController {
     this.enabled = enabled;
     if (!enabled) {
       this.options.runtimeState.isDashing = false;
+      this.options.runtimeState.dashDirection = null;
       this.options.runtimeState.dashTimeRemainingMs = 0;
       this.player.body.setVelocity(0, 0);
     }

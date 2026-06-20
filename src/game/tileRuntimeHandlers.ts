@@ -49,7 +49,7 @@ export class TileRuntimeController {
     this.scene.physics.add.collider(this.player, this.level.dashBlocks, (_player, dashBlock) => this.handleDashBlock(dashBlock));
     this.scene.physics.add.overlap(this.player, this.level.spikes, () => this.callbacks.onDeath('You touched spikes.'));
     this.scene.physics.add.overlap(this.player, this.level.goals, () => this.callbacks.onComplete());
-    this.scene.physics.add.overlap(this.player, this.level.springs, (_player, spring) => this.handleSpring(spring));
+    this.scene.physics.add.collider(this.player, this.level.springs, (_player, spring) => this.handleSpring(spring));
     this.scene.physics.add.overlap(this.player, this.level.keys, (_player, key) => this.handleKey(key));
     this.scene.physics.add.overlap(this.player, this.level.switches, (_player, switchTile) => this.handleSwitch(switchTile));
     this.scene.physics.add.overlap(this.player, this.level.dashCrystals, (_player, crystal) => this.handleDashCrystal(crystal));
@@ -163,10 +163,13 @@ export class TileRuntimeController {
 
   private handleSpring(object: unknown): void {
     const entity = getEntity(this.level, object);
-    const springBody = entity?.trigger?.body as Phaser.Physics.Arcade.StaticBody | undefined;
+    if (!entity) return;
+    const springBody = entity.collider?.body as Phaser.Physics.Arcade.StaticBody | undefined;
     if (!springBody) return;
     const playerBody = this.player.body;
-    const fromAbove = playerBody.velocity.y >= 0 && playerBody.bottom <= springBody.top + playerBody.height * 0.55;
+    // Collider resolution aligns a successful top landing with springBody.top.
+    // A side collision leaves the player's bottom below that top edge, so it blocks without bouncing.
+    const fromAbove = playerBody.bottom <= springBody.top + 4 && this.player.y < entity.y;
     if (fromAbove) this.playerController.bounce();
   }
 

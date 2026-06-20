@@ -60,7 +60,7 @@ npm run preview
 ## Ability System Rules
 
 - move 和 jump 是基础能力，始终启用。
-- dash 是第一个可选动作能力，计划在 Phase 4B 实现。
+- dash 是第一个可选动作能力，已在 Phase 4B 实现。
 - wallJump、doubleJump、carry 当前为 reserved，不要擅自实现。
 - ability 专用 tile 必须检查 enabledAbilities。
 - dashCrystal 和 dashBlock 只在 dash 启用时才是有效机制。

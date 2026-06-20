@@ -63,8 +63,7 @@ const tileBuildHandlers: Partial<Record<RuntimeTileKind, TileBuildHandler>> = {
     context.entity.trigger = createPhysicalTile(context, context.result.goals);
   },
   spring: (context) => {
-    context.entity.collider = createPhysicalTile(context, context.result.solids);
-    context.entity.trigger = createPhysicalTile(context, context.result.springs);
+    context.entity.collider = createPhysicalTile(context, context.result.springs);
   },
   spawn: (context) => { context.result.spawnPosition = { x: context.entity.x, y: context.entity.y }; },
   key: (context) => { context.entity.trigger = createPhysicalTile(context, context.result.keys); },

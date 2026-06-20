@@ -11,7 +11,7 @@ export function TestingWorkspace({ level, onExit, onComplete }: TestingWorkspace
   return (
     <main className="testing-workspace">
       <header className="testing-toolbar">
-        <div><p className="eyebrow">PHASE 3A · TEST MODE</p><strong>{level.title}</strong></div>
+        <div><p className="eyebrow">PHASE 4B · TEST MODE</p><strong>{level.title}</strong></div>
         <button type="button" onClick={onExit}>返回编辑器</button>
       </header>
       <section className="testing-stage">

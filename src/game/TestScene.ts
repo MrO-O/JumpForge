@@ -42,6 +42,7 @@ export class TestScene extends Phaser.Scene {
       color: '#e5edf9', fontFamily: 'system-ui, sans-serif', fontSize: '14px', lineSpacing: 5,
       backgroundColor: '#10182acc', padding: { x: 9, y: 7 },
     }).setScrollFactor(0).setDepth(20);
+    this.events.once('shutdown', this.shutdown, this);
 
     if (!this.builtLevel.spawnPosition || !this.builtLevel.goalPosition) {
       this.state.currentMessage = 'Runtime error: spawn or goal is missing. Return to the editor to fix this level.';
@@ -132,6 +133,14 @@ export class TestScene extends Phaser.Scene {
 
   private exitToEditor(): void {
     this.options.onExit();
+  }
+
+  private shutdown(): void {
+    this.respawnEvent?.remove(false);
+    this.input.keyboard?.off('keydown-R', this.restartLevel, this);
+    this.input.keyboard?.off('keydown-ESC', this.exitToEditor, this);
+    this.controller?.setEnabled(false);
+    this.tileRuntime = undefined;
   }
 
   private refreshHud(): void {
