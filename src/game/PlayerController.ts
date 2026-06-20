@@ -10,6 +10,20 @@ export interface WallContact {
 
 export type PlayerBody = Phaser.GameObjects.Rectangle & { body: Phaser.Physics.Arcade.Body };
 
+/** Keep the rendered rectangle readable while giving Arcade Physics room at tile seams. */
+export const playerCollisionInsets = {
+  horizontalRatio: 0.08,
+  topRatio: 0.08,
+} as const;
+
+export function configurePlayerCollisionBody(player: PlayerBody): void {
+  const insetX = Math.max(1, Math.round(player.width * playerCollisionInsets.horizontalRatio));
+  const insetTop = Math.max(1, Math.round(player.height * playerCollisionInsets.topRatio));
+  player.body.setSize(player.width - insetX * 2, player.height - insetTop, false);
+  // Bottom alignment keeps floor, spring, and one-way contacts consistent with the visual feet.
+  player.body.setOffset(insetX, insetTop);
+}
+
 export interface PlayerControllerOptions {
   dashEnabled: boolean;
   wallJumpEnabled: boolean;
@@ -73,7 +87,7 @@ export class PlayerController {
     const body = this.player.body;
     const now = this.scene.time.now;
     const deltaSeconds = Math.min(deltaMs, 50) / 1000;
-    const grounded = body.blocked.down || body.touching.down;
+    const grounded = this.isGrounded();
     const wallContact = grounded ? null : this.options.getWallContact();
     state.isWallSliding = false;
     state.isClimbing = false;
@@ -114,8 +128,10 @@ export class PlayerController {
     if (this.updateClimb(wallContact, deltaSeconds)) return;
 
     if (now >= this.wallJumpLockUntil) {
-      const targetVelocity = direction * this.tuning.maxMoveSpeed;
-      const horizontalRate = direction === 0
+      const pushingIntoWall = wallContact && ((wallContact.side === 'left' && direction < 0) || (wallContact.side === 'right' && direction > 0));
+      const appliedDirection = pushingIntoWall ? 0 : direction;
+      const targetVelocity = appliedDirection * this.tuning.maxMoveSpeed;
+      const horizontalRate = appliedDirection === 0
         ? (grounded ? this.tuning.groundDrag : this.tuning.airDrag)
         : (grounded ? this.tuning.acceleration : this.tuning.airAcceleration);
       body.setVelocityX(Phaser.Math.Linear(body.velocity.x, targetVelocity, Math.min(1, horizontalRate * deltaSeconds / this.tuning.maxMoveSpeed)));
@@ -182,6 +198,12 @@ export class PlayerController {
 
   private isDashPressed(): boolean {
     return this.dashKeys.some((key) => Phaser.Input.Keyboard.JustDown(key));
+  }
+
+  /** Only a downward-facing collision is ground; side contacts and upward hits never qualify. */
+  private isGrounded(): boolean {
+    const body = this.player.body;
+    return (body.blocked.down || body.touching.down) && body.velocity.y >= -12;
   }
 
   private performWallJump(wallContact: WallContact, now: number): void {

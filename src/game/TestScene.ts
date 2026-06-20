@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { resolveMovementProfile } from './movementPresets';
 import type { LevelDocument } from '../levels/levelTypes';
-import { PlayerController, type PlayerBody } from './PlayerController';
+import { configurePlayerCollisionBody, PlayerController, type PlayerBody } from './PlayerController';
 import type { PlayerTuning } from './playerTuning';
 import { buildRuntimeLevel, type RuntimeLevelBuildResult } from './RuntimeLevelBuilder';
 import { resetRuntimeAttempt, createRuntimeLevelState, type RuntimeLevelState } from './runtimeTypes';
@@ -28,6 +28,8 @@ export class TestScene extends Phaser.Scene {
   private wallClimbEnabled = false;
   private movementPresetName = 'Balanced';
   private movementTuning?: PlayerTuning;
+  private mergedStaticColliderCount = 0;
+  private dashBlockClusterCount = 0;
 
   constructor(options: TestSceneOptions) {
     super({ key: 'jumpforge-test-scene' });
@@ -51,6 +53,8 @@ export class TestScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor('#0b1020');
     this.physics.world.setBounds(0, 0, worldWidth, this.worldHeight, true, true, true, false);
     this.builtLevel = buildRuntimeLevel(this, level);
+    this.mergedStaticColliderCount = this.builtLevel.mergedStaticColliderCount;
+    this.dashBlockClusterCount = this.builtLevel.dashBlockClusters.size;
     this.state.spawnPosition = this.builtLevel.spawnPosition;
     this.hud = this.add.text(14, 12, '', {
       color: '#e5edf9', fontFamily: 'system-ui, sans-serif', fontSize: '14px', lineSpacing: 5,
@@ -97,7 +101,7 @@ export class TestScene extends Phaser.Scene {
     const size = this.options.level.tileSize;
     const player = this.add.rectangle(x, y, Math.round(size * 0.62), Math.round(size * 0.82), 0x60a5fa).setDepth(4) as PlayerBody;
     this.physics.add.existing(player);
-    player.body.setSize(Math.round(size * 0.62), Math.round(size * 0.82), true);
+    configurePlayerCollisionBody(player);
     this.player = player;
     this.controller = new PlayerController(this, player, {
       dashEnabled: this.dashEnabled,
@@ -170,6 +174,7 @@ export class TestScene extends Phaser.Scene {
       `Movement: ${this.movementPresetName}`,
       `Shift / X dash · Dash: ${this.controller?.dashStatus ?? 'Disabled'}`,
       `Wall: ${this.state.isClimbing ? 'CLIMB' : this.state.isWallSliding ? 'SLIDE' : '—'} · Stamina: ${this.controller?.wallClimbEnabled ? `${Math.ceil(this.state.currentStamina)}/${Math.round(this.controller.tuning.maxStamina)}` : '—'}`,
+      `Static collision rects: ${this.mergedStaticColliderCount} · Dash block clusters: ${this.dashBlockClusterCount}`,
       `Keys: ${this.state.keyCount} · Switch doors: ${this.state.switchDoorsOpen ? 'OPEN' : 'CLOSED'}`,
       this.state.currentMessage,
       `Time: ${(this.state.elapsedMs / 1000).toFixed(1)}s · Restarts: ${this.state.restartCount}`,

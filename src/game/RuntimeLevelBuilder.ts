@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { mergeDashBlockClusters, mergeStaticTileRects, type DashBlockClusterRect, type MergeableStaticTileId, type MergedStaticRect } from './collisionMerge';
 import type { LevelDocument } from '../levels/levelTypes';
 import { getTileDefinition } from '../tiles/tileRegistry';
 import type { RuntimeTileKind } from '../tiles/tileTypes';
@@ -14,6 +15,12 @@ export interface RuntimeTileEntity {
   glyph: Phaser.GameObjects.Text;
   collider?: Phaser.GameObjects.Rectangle;
   trigger?: Phaser.GameObjects.Rectangle;
+}
+
+export interface DashBlockCluster {
+  id: string;
+  cellKeys: RuntimeCellKey[];
+  collider: Phaser.GameObjects.Rectangle;
 }
 
 export interface RuntimeLevelBuildResult {
@@ -33,6 +40,11 @@ export interface RuntimeLevelBuildResult {
   spawnPosition: RuntimePosition | null;
   goalPosition: RuntimePosition | null;
   entitiesByCell: Map<RuntimeCellKey, RuntimeTileEntity>;
+  staticWallCells: Map<RuntimeCellKey, MergeableStaticTileId>;
+  mergedStaticColliderCount: number;
+  tileSize: number;
+  dashBlockClusters: Map<string, DashBlockCluster>;
+  dashBlockClustersByCell: Map<RuntimeCellKey, DashBlockCluster>;
 }
 
 interface TileBuildContext {
@@ -56,8 +68,32 @@ function createPhysicalTile(context: TileBuildContext, group: Phaser.Physics.Arc
   return rectangle;
 }
 
+function createMergedStaticCollider(scene: Phaser.Scene, result: RuntimeLevelBuildResult, rect: MergedStaticRect, tileSize: number): void {
+  const width = rect.width * tileSize;
+  const height = rect.height * tileSize;
+  const rectangle = scene.add.rectangle((rect.x + rect.width / 2) * tileSize, (rect.y + rect.height / 2) * tileSize, width, height, 0x000000, 0).setVisible(false);
+  scene.physics.add.existing(rectangle, true);
+  (rect.tileId === 'climbWall' ? result.climbWalls : result.solids).add(rectangle);
+  result.mergedStaticColliderCount += 1;
+  for (let y = rect.y; y < rect.y + rect.height; y += 1) {
+    for (let x = rect.x; x < rect.x + rect.width; x += 1) result.staticWallCells.set(toCellKey(x, y), rect.tileId);
+  }
+}
+
+function createDashBlockCluster(scene: Phaser.Scene, result: RuntimeLevelBuildResult, rect: DashBlockClusterRect, tileSize: number): void {
+  const width = rect.width * tileSize;
+  const height = rect.height * tileSize;
+  const id = `dash-block-cluster-${result.dashBlockClusters.size}`;
+  const collider = scene.add.rectangle((rect.x + rect.width / 2) * tileSize, (rect.y + rect.height / 2) * tileSize, width, height, 0x000000, 0).setVisible(false);
+  collider.setData('dashBlockClusterId', id);
+  scene.physics.add.existing(collider, true);
+  result.dashBlocks.add(collider);
+  const cluster: DashBlockCluster = { id, cellKeys: rect.cellKeys.map((cellKey) => cellKey as RuntimeCellKey), collider };
+  result.dashBlockClusters.set(id, cluster);
+  for (const cellKey of cluster.cellKeys) result.dashBlockClustersByCell.set(cellKey, cluster);
+}
+
 const tileBuildHandlers: Partial<Record<RuntimeTileKind, TileBuildHandler>> = {
-  solid: (context) => { context.entity.collider = createPhysicalTile(context, context.result.solids); },
   oneWayPlatform: (context) => { context.entity.collider = createPhysicalTile(context, context.result.oneWayPlatforms); },
   spike: (context) => { context.entity.trigger = createPhysicalTile(context, context.result.spikes); },
   goal: (context) => {
@@ -73,8 +109,6 @@ const tileBuildHandlers: Partial<Record<RuntimeTileKind, TileBuildHandler>> = {
   switch: (context) => { context.entity.trigger = createPhysicalTile(context, context.result.switches); },
   switchDoor: (context) => { context.entity.collider = createPhysicalTile(context, context.result.switchDoors); },
   dashCrystal: (context) => { context.entity.trigger = createPhysicalTile(context, context.result.dashCrystals); },
-  dashBlock: (context) => { context.entity.collider = createPhysicalTile(context, context.result.dashBlocks); },
-  climbWall: (context) => { context.entity.collider = createPhysicalTile(context, context.result.climbWalls); },
   staminaRefill: (context) => { context.entity.trigger = createPhysicalTile(context, context.result.staminaRefills); },
 };
 
@@ -97,6 +131,11 @@ export function buildRuntimeLevel(scene: Phaser.Scene, level: LevelDocument): Ru
     spawnPosition: null,
     goalPosition: null,
     entitiesByCell: new Map(),
+    staticWallCells: new Map(),
+    mergedStaticColliderCount: 0,
+    tileSize: level.tileSize,
+    dashBlockClusters: new Map(),
+    dashBlockClustersByCell: new Map(),
   };
 
   for (const layer of level.layers) {
@@ -122,6 +161,12 @@ export function buildRuntimeLevel(scene: Phaser.Scene, level: LevelDocument): Ru
       };
       result.entitiesByCell.set(entity.cellKey, entity);
       tileBuildHandlers[entity.kind]?.({ scene, result, entity, tileSize: level.tileSize });
+    }
+    for (const rect of mergeStaticTileRects(layer.tiles, level.width, level.height)) {
+      createMergedStaticCollider(scene, result, rect, level.tileSize);
+    }
+    for (const cluster of mergeDashBlockClusters(layer.tiles, level.width, level.height)) {
+      createDashBlockCluster(scene, result, cluster, level.tileSize);
     }
   }
   return result;

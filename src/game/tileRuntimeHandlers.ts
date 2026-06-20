@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import type { PlayerBody, PlayerController, WallContact } from './PlayerController';
-import type { RuntimeLevelBuildResult, RuntimeTileEntity } from './RuntimeLevelBuilder';
-import type { RuntimeCellKey, RuntimeLevelState } from './runtimeTypes';
+import type { DashBlockCluster, RuntimeLevelBuildResult, RuntimeTileEntity } from './RuntimeLevelBuilder';
+import { toCellKey, type RuntimeCellKey, type RuntimeLevelState } from './runtimeTypes';
 
 export interface TileRuntimeHandlerCallbacks {
   onDeath: (message: string) => void;
@@ -15,6 +15,12 @@ function getEntity(result: RuntimeLevelBuildResult, object: unknown): RuntimeTil
   return cellKey ? result.entitiesByCell.get(cellKey) : undefined;
 }
 
+function getDashBlockCluster(result: RuntimeLevelBuildResult, object: unknown): DashBlockCluster | undefined {
+  const candidate = object as { getData?: (key: string) => unknown; gameObject?: { getData?: (key: string) => unknown } };
+  const id = (candidate.getData?.('dashBlockClusterId') ?? candidate.gameObject?.getData?.('dashBlockClusterId')) as string | undefined;
+  return id ? result.dashBlockClusters.get(id) : undefined;
+}
+
 function setColliderEnabled(entity: RuntimeTileEntity, enabled: boolean): void {
   const body = entity.collider?.body as Phaser.Physics.Arcade.StaticBody | undefined;
   if (!body) return;
@@ -25,6 +31,13 @@ function setColliderEnabled(entity: RuntimeTileEntity, enabled: boolean): void {
 function setVisible(entity: RuntimeTileEntity, visible: boolean): void {
   entity.visual.setVisible(visible);
   entity.glyph.setVisible(visible);
+}
+
+function setClusterColliderEnabled(cluster: DashBlockCluster, enabled: boolean): void {
+  const body = cluster.collider.body as Phaser.Physics.Arcade.StaticBody | undefined;
+  if (!body) return;
+  body.enable = enabled;
+  if (enabled) body.updateFromGameObject();
 }
 
 /** Concentrates tile interaction state and Phaser collision wiring for Phase 4A/4B. */
@@ -83,10 +96,6 @@ export class TileRuntimeController {
           setVisible(entity, true);
           this.setTriggerEnabled(entity, true);
           break;
-        case 'dashBlock':
-          setVisible(entity, true);
-          setColliderEnabled(entity, true);
-          break;
         case 'staminaRefill':
           setVisible(entity, true);
           this.setTriggerEnabled(entity, true);
@@ -95,24 +104,41 @@ export class TileRuntimeController {
           break;
       }
     }
+    for (const cluster of this.level.dashBlockClusters.values()) {
+      setClusterColliderEnabled(cluster, true);
+      for (const cellKey of cluster.cellKeys) {
+        const entity = this.level.entitiesByCell.get(cellKey);
+        if (entity) setVisible(entity, true);
+      }
+    }
   }
 
   /** A small tile-neighbour probe is more reliable than Arcade side flags for wall abilities. */
   getWallContact(): WallContact | null {
     const body = this.player.body;
+    const side = body.blocked.right || body.touching.right ? 'right' : body.blocked.left || body.touching.left ? 'left' : null;
+    if (!side) return null;
     const playerLeft = body.x;
     const playerRight = body.x + body.width;
     const playerTop = body.y;
     const playerBottom = body.y + body.height;
-    for (const entity of this.level.entitiesByCell.values()) {
-      if (!entity.collider || !this.isWallEntity(entity) || !this.isColliderEnabled(entity)) continue;
-      const entityLeft = entity.x - entity.visual.width / 2;
-      const entityRight = entity.x + entity.visual.width / 2;
-      const entityTop = entity.y - entity.visual.height / 2;
-      const entityBottom = entity.y + entity.visual.height / 2;
-      if (Math.min(playerBottom, entityBottom) - Math.max(playerTop, entityTop) < 6) continue;
-      if (Math.abs(entityLeft - playerRight) <= 6) return { side: 'right', climbable: entity.kind === 'climbWall' };
-      if (Math.abs(playerLeft - entityRight) <= 6) return { side: 'left', climbable: entity.kind === 'climbWall' };
+    const tileSize = this.level.tileSize;
+    const cellX = Math.floor((side === 'right' ? playerRight + 1 : playerLeft - 1) / tileSize);
+    const startY = Math.floor((playerTop + Math.max(2, body.height * 0.2)) / tileSize);
+    const endY = Math.floor((playerBottom - Math.max(2, body.height * 0.2)) / tileSize);
+
+    for (let cellY = startY; cellY <= endY; cellY += 1) {
+      const cellKey = toCellKey(cellX, cellY);
+      const staticTile = this.level.staticWallCells.get(cellKey);
+      if (staticTile) return { side, climbable: staticTile === 'climbWall' };
+      const dashBlockCluster = this.level.dashBlockClustersByCell.get(cellKey);
+      if (dashBlockCluster && !dashBlockCluster.cellKeys.every((key) => this.state.brokenDashBlockCells.has(key))) {
+        return { side, climbable: false };
+      }
+      const entity = this.level.entitiesByCell.get(cellKey);
+      if (entity?.collider && this.isWallEntity(entity) && this.isColliderEnabled(entity)) {
+        return { side, climbable: false };
+      }
     }
     return null;
   }
@@ -189,13 +215,16 @@ export class TileRuntimeController {
   }
 
   private handleDashBlock(object: unknown): void {
-    const entity = getEntity(this.level, object);
-    if (!entity || this.state.brokenDashBlockCells.has(entity.cellKey) || !this.playerController.isDashing) return;
-    this.state.brokenDashBlockCells.add(entity.cellKey);
-    this.state.hiddenTileCells.add(entity.cellKey);
-    setVisible(entity, false);
-    setColliderEnabled(entity, false);
-    this.callbacks.onMessage('Dash block broken.');
+    const cluster = getDashBlockCluster(this.level, object);
+    if (!cluster || !this.playerController.isDashing || cluster.cellKeys.every((cellKey) => this.state.brokenDashBlockCells.has(cellKey))) return;
+    for (const cellKey of cluster.cellKeys) {
+      this.state.brokenDashBlockCells.add(cellKey);
+      this.state.hiddenTileCells.add(cellKey);
+      const entity = this.level.entitiesByCell.get(cellKey);
+      if (entity) setVisible(entity, false);
+    }
+    setClusterColliderEnabled(cluster, false);
+    this.callbacks.onMessage('Dash block cluster broken.');
   }
 
   private handleSpring(object: unknown): void {

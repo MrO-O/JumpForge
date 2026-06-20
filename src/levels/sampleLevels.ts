@@ -29,6 +29,7 @@ const wallTrainingLevel = paint(
   [
     [18, 10, 'empty'], [16, 6, 'goal'],
     [6, 5, 'climbWall'], [6, 6, 'climbWall'], [6, 7, 'climbWall'], [6, 8, 'climbWall'], [6, 9, 'climbWall'], [6, 10, 'climbWall'],
+    [18, 3, 'solid'], [18, 4, 'solid'], [18, 5, 'solid'], [18, 6, 'solid'], [18, 7, 'solid'], [18, 8, 'solid'], [18, 9, 'solid'],
     [8, 7, 'solid'], [9, 7, 'solid'], [10, 7, 'solid'], [11, 7, 'solid'], [12, 7, 'solid'], [13, 7, 'solid'], [14, 7, 'solid'], [15, 7, 'solid'], [16, 7, 'solid'],
     [9, 6, 'staminaRefill'],
   ],
