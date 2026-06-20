@@ -25,8 +25,8 @@ export const abilityRegistry: Readonly<Record<AbilityId, AbilityDefinition>> = {
     description: '短时间向指定方向高速移动，可与 dash 专用 tile 联动。',
     defaultEnabled: false,
     dependsOn: ['move'],
-    status: 'planned-for-v1',
-    configDefaults: { speed: 520, durationMs: 160 },
+    status: 'implemented',
+    configDefaults: { speed: 640, durationMs: 210 },
   },
   wallJump: {
     id: 'wallJump',

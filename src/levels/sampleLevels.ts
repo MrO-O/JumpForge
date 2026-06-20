@@ -16,8 +16,12 @@ const keyDoorLevel = paint(
 );
 
 const dashLevel = paint(
-  createEmptyLevel({ id: 'sample-dash', title: '冲刺展示（待 Phase 4B）', author: 'JumpForge', width: 20, height: 10, enabledAbilities: ['move', 'jump', 'dash'] }),
-  [[5, 8, 'dashCrystal'], [9, 8, 'dashBlock'], [10, 8, 'dashBlock'], [11, 8, 'dashBlock'], [14, 6, 'solid'], [15, 6, 'solid'], [16, 6, 'solid']],
+  createEmptyLevel({ id: 'sample-dash', title: '冲刺路线', author: 'JumpForge', width: 20, height: 10, enabledAbilities: ['move', 'jump', 'dash'] }),
+  [
+    [6, 9, 'empty'], [7, 9, 'empty'], [8, 9, 'empty'], [9, 9, 'empty'],
+    [11, 8, 'dashCrystal'],
+    [14, 6, 'dashBlock'], [14, 7, 'dashBlock'], [14, 8, 'dashBlock'],
+  ],
 );
 
 export const sampleLevels: readonly LevelDocument[] = [basicJumpLevel, keyDoorLevel, dashLevel];

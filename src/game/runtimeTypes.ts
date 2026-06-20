@@ -3,6 +3,11 @@ export interface RuntimePosition {
   y: number;
 }
 
+export interface RuntimeDirection {
+  x: number;
+  y: number;
+}
+
 export type RuntimeCellKey = `${number},${number}`;
 
 export const toCellKey = (x: number, y: number): RuntimeCellKey => `${x},${y}`;
@@ -21,9 +26,17 @@ export interface RuntimeLevelState {
   openedLockedDoors: Set<RuntimeCellKey>;
   pressedSwitches: Set<RuntimeCellKey>;
   switchDoorsOpen: boolean;
+  dashAvailable: boolean;
+  isDashing: boolean;
+  dashDirection: RuntimeDirection | null;
+  dashTimeRemainingMs: number;
+  dashCooldownMs: number;
+  consumedDashCrystalCells: Set<RuntimeCellKey>;
+  brokenDashBlockCells: Set<RuntimeCellKey>;
+  lastDashStartedAt: number | null;
 }
 
-export const createRuntimeLevelState = (): RuntimeLevelState => ({
+export const createRuntimeLevelState = (dashEnabled = false): RuntimeLevelState => ({
   isDead: false,
   isComplete: false,
   spawnPosition: null,
@@ -36,10 +49,18 @@ export const createRuntimeLevelState = (): RuntimeLevelState => ({
   openedLockedDoors: new Set(),
   pressedSwitches: new Set(),
   switchDoorsOpen: false,
+  dashAvailable: dashEnabled,
+  isDashing: false,
+  dashDirection: null,
+  dashTimeRemainingMs: 0,
+  dashCooldownMs: 0,
+  consumedDashCrystalCells: new Set(),
+  brokenDashBlockCells: new Set(),
+  lastDashStartedAt: null,
 });
 
 /** Restore all mechanic progress to the start of the current test attempt. */
-export function resetRuntimeAttempt(state: RuntimeLevelState, message: string): void {
+export function resetRuntimeAttempt(state: RuntimeLevelState, message: string, dashEnabled = false): void {
   state.isDead = false;
   state.isComplete = false;
   state.elapsedMs = 0;
@@ -49,5 +70,13 @@ export function resetRuntimeAttempt(state: RuntimeLevelState, message: string): 
   state.openedLockedDoors.clear();
   state.pressedSwitches.clear();
   state.switchDoorsOpen = false;
+  state.dashAvailable = dashEnabled;
+  state.isDashing = false;
+  state.dashDirection = null;
+  state.dashTimeRemainingMs = 0;
+  state.dashCooldownMs = 0;
+  state.consumedDashCrystalCells.clear();
+  state.brokenDashBlockCells.clear();
+  state.lastDashStartedAt = null;
   state.currentMessage = message;
 }

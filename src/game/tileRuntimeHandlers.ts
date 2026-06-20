@@ -27,7 +27,7 @@ function setVisible(entity: RuntimeTileEntity, visible: boolean): void {
   entity.glyph.setVisible(visible);
 }
 
-/** Concentrates tile interaction state and Phaser collision wiring for Phase 4A. */
+/** Concentrates tile interaction state and Phaser collision wiring for Phase 4A/4B. */
 export class TileRuntimeController {
   private readonly switchCooldowns = new Map<RuntimeCellKey, number>();
   private lastDoorPromptAt = Number.NEGATIVE_INFINITY;
@@ -46,11 +46,13 @@ export class TileRuntimeController {
     this.scene.physics.add.collider(this.player, this.level.oneWayPlatforms, undefined, (_player, platform) => this.canLandOnOneWay(platform));
     this.scene.physics.add.collider(this.player, this.level.lockedDoors, (_player, door) => this.handleLockedDoor(door));
     this.scene.physics.add.collider(this.player, this.level.switchDoors);
+    this.scene.physics.add.collider(this.player, this.level.dashBlocks, (_player, dashBlock) => this.handleDashBlock(dashBlock));
     this.scene.physics.add.overlap(this.player, this.level.spikes, () => this.callbacks.onDeath('You touched spikes.'));
     this.scene.physics.add.overlap(this.player, this.level.goals, () => this.callbacks.onComplete());
     this.scene.physics.add.overlap(this.player, this.level.springs, (_player, spring) => this.handleSpring(spring));
     this.scene.physics.add.overlap(this.player, this.level.keys, (_player, key) => this.handleKey(key));
     this.scene.physics.add.overlap(this.player, this.level.switches, (_player, switchTile) => this.handleSwitch(switchTile));
+    this.scene.physics.add.overlap(this.player, this.level.dashCrystals, (_player, crystal) => this.handleDashCrystal(crystal));
   }
 
   resetForAttempt(): void {
@@ -73,6 +75,14 @@ export class TileRuntimeController {
         case 'switchDoor':
           entity.visual.setAlpha(1);
           entity.glyph.setAlpha(1);
+          setColliderEnabled(entity, true);
+          break;
+        case 'dashCrystal':
+          setVisible(entity, true);
+          this.setTriggerEnabled(entity, true);
+          break;
+        case 'dashBlock':
+          setVisible(entity, true);
           setColliderEnabled(entity, true);
           break;
         default:
@@ -128,6 +138,27 @@ export class TileRuntimeController {
     entity.visual.setAlpha(this.state.switchDoorsOpen ? 0.55 : 1);
     entity.glyph.setAlpha(this.state.switchDoorsOpen ? 0.55 : 1);
     this.callbacks.onMessage(`Switch doors ${this.state.switchDoorsOpen ? 'open' : 'closed'}.`);
+  }
+
+  private handleDashCrystal(object: unknown): void {
+    const entity = getEntity(this.level, object);
+    if (!entity || this.state.consumedDashCrystalCells.has(entity.cellKey)) return;
+    this.state.consumedDashCrystalCells.add(entity.cellKey);
+    this.state.hiddenTileCells.add(entity.cellKey);
+    setVisible(entity, false);
+    this.setTriggerEnabled(entity, false);
+    this.playerController.refillDash();
+    this.callbacks.onMessage('Dash refilled.');
+  }
+
+  private handleDashBlock(object: unknown): void {
+    const entity = getEntity(this.level, object);
+    if (!entity || this.state.brokenDashBlockCells.has(entity.cellKey) || !this.playerController.isDashing) return;
+    this.state.brokenDashBlockCells.add(entity.cellKey);
+    this.state.hiddenTileCells.add(entity.cellKey);
+    setVisible(entity, false);
+    setColliderEnabled(entity, false);
+    this.callbacks.onMessage('Dash block broken.');
   }
 
   private handleSpring(object: unknown): void {

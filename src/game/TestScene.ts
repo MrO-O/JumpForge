@@ -21,6 +21,7 @@ export class TestScene extends Phaser.Scene {
   private hud?: Phaser.GameObjects.Text;
   private respawnEvent?: Phaser.Time.TimerEvent;
   private worldHeight = 0;
+  private dashEnabled = false;
 
   constructor(options: TestSceneOptions) {
     super({ key: 'jumpforge-test-scene' });
@@ -29,6 +30,8 @@ export class TestScene extends Phaser.Scene {
 
   create(): void {
     const { level } = this.options;
+    this.dashEnabled = level.enabledAbilities.includes('dash');
+    this.state = createRuntimeLevelState(this.dashEnabled);
     const worldWidth = level.width * level.tileSize;
     this.worldHeight = level.height * level.tileSize;
     this.cameras.main.setBackgroundColor('#0b1020');
@@ -81,12 +84,12 @@ export class TestScene extends Phaser.Scene {
     this.physics.add.existing(player);
     player.body.setSize(Math.round(size * 0.62), Math.round(size * 0.82), true);
     this.player = player;
-    this.controller = new PlayerController(this, player);
+    this.controller = new PlayerController(this, player, { dashEnabled: this.dashEnabled, runtimeState: this.state });
   }
 
   private killPlayer(message: string): void {
     if (this.state.isDead || this.state.isComplete || !this.player || !this.controller) return;
-    resetRuntimeAttempt(this.state, `${message} Respawning…`);
+    resetRuntimeAttempt(this.state, `${message} Respawning…`, this.dashEnabled);
     this.state.isDead = true;
     this.tileRuntime?.resetForAttempt();
     this.player.setFillStyle(0xef4444);
@@ -117,7 +120,7 @@ export class TestScene extends Phaser.Scene {
     if (!this.player || !this.controller || !spawnPosition) return;
     this.respawnEvent?.remove(false);
     const nextRestartCount = this.state.restartCount + 1;
-    resetRuntimeAttempt(this.state, 'Restarted. Mechanisms reset.');
+    resetRuntimeAttempt(this.state, 'Restarted. Mechanisms reset.', this.dashEnabled);
     this.state.spawnPosition = spawnPosition;
     this.state.restartCount = nextRestartCount;
     this.tileRuntime?.resetForAttempt();
@@ -134,6 +137,7 @@ export class TestScene extends Phaser.Scene {
   private refreshHud(): void {
     this.hud?.setText([
       '← → move · Space / ↑ jump · R restart · Esc return',
+      `Shift / X dash · Dash: ${this.controller?.dashStatus ?? 'Disabled'}`,
       `Keys: ${this.state.keyCount} · Switch doors: ${this.state.switchDoorsOpen ? 'OPEN' : 'CLOSED'}`,
       this.state.currentMessage,
       `Time: ${(this.state.elapsedMs / 1000).toFixed(1)}s · Restarts: ${this.state.restartCount}`,

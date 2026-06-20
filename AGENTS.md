@@ -14,7 +14,8 @@ JumpForge 是浏览器端 2D 平台跳跃关卡设计工具。核心不是单纯
 - Phase 2：关卡库、网格编辑器、Tile Palette、属性面板、保存、导入导出。
 - Phase 3A：Phaser 测试模式、基础移动、跳跃、死亡、通关、R 重开。
 - Phase 4A：key / lockedDoor、switch / switchDoor、spring、oneWayPlatform 基础实现。
-- 下一步：Phase 4B，实现 dash、dashCrystal、dashBlock。
+- Phase 4B：dash、dashCrystal、dashBlock 基础实现。
+- 后续能力扩展必须由用户明确提出。
 
 ## Commands
 

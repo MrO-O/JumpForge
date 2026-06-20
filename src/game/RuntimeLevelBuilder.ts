@@ -26,6 +26,8 @@ export interface RuntimeLevelBuildResult {
   lockedDoors: Phaser.Physics.Arcade.StaticGroup;
   switches: Phaser.Physics.Arcade.StaticGroup;
   switchDoors: Phaser.Physics.Arcade.StaticGroup;
+  dashCrystals: Phaser.Physics.Arcade.StaticGroup;
+  dashBlocks: Phaser.Physics.Arcade.StaticGroup;
   spawnPosition: RuntimePosition | null;
   goalPosition: RuntimePosition | null;
   entitiesByCell: Map<RuntimeCellKey, RuntimeTileEntity>;
@@ -69,6 +71,8 @@ const tileBuildHandlers: Partial<Record<RuntimeTileKind, TileBuildHandler>> = {
   lockedDoor: (context) => { context.entity.collider = createPhysicalTile(context, context.result.lockedDoors); },
   switch: (context) => { context.entity.trigger = createPhysicalTile(context, context.result.switches); },
   switchDoor: (context) => { context.entity.collider = createPhysicalTile(context, context.result.switchDoors); },
+  dashCrystal: (context) => { context.entity.trigger = createPhysicalTile(context, context.result.dashCrystals); },
+  dashBlock: (context) => { context.entity.collider = createPhysicalTile(context, context.result.dashBlocks); },
 };
 
 /** Builds registry-driven visuals and physics primitives; behavior is bound by tileRuntimeHandlers. */
@@ -83,6 +87,8 @@ export function buildRuntimeLevel(scene: Phaser.Scene, level: LevelDocument): Ru
     lockedDoors: scene.physics.add.staticGroup(),
     switches: scene.physics.add.staticGroup(),
     switchDoors: scene.physics.add.staticGroup(),
+    dashCrystals: scene.physics.add.staticGroup(),
+    dashBlocks: scene.physics.add.staticGroup(),
     spawnPosition: null,
     goalPosition: null,
     entitiesByCell: new Map(),
