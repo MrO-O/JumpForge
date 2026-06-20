@@ -38,6 +38,34 @@ dash 可用次数、水晶消耗、方块破坏与玩家冲刺方向均只保存
 
 Phaser 会使当前生产包较大，Vite 可能显示 chunk 体积提示；这不影响 `npm run build` 的成功结果。后续如有必要，可将测试运行时按需加载。
 
+## 部署到 GitHub Pages
+
+1. 在 GitHub 创建仓库并将代码推送到 `main` 分支。
+2. 打开仓库的 **Settings → Pages**，将 **Source** 选择为 **GitHub Actions**。
+3. 推送到 `main` 后，`.github/workflows/deploy.yml` 会自动安装依赖、构建 `dist` 并部署；也可以在 **Actions** 页面手动运行该 workflow。
+
+默认部署地址通常为：
+
+```text
+https://<username>.github.io/<repo-name>/
+```
+
+工作流通过 `VITE_BASE_PATH` 为 Vite 设置项目页子路径。当前默认值为 `/JumpForge/`；如果 GitHub 仓库名不是 `JumpForge`，请修改 `.github/workflows/deploy.yml` 中的 `VITE_BASE_PATH`，例如仓库为 `level-lab` 时设为 `/level-lab/`。本地开发和默认的 `npm run build` 均使用 `/`，不会受此配置影响。可用以下命令在本地模拟 GitHub Pages 的构建路径：
+
+```bash
+VITE_BASE_PATH=/JumpForge/ npm run build
+```
+
+在 PowerShell 中可使用：
+
+```powershell
+$env:VITE_BASE_PATH = '/JumpForge/'
+npm run build
+Remove-Item Env:VITE_BASE_PATH
+```
+
+JumpForge 是纯前端应用：没有后端、账号或云同步。关卡保存在当前浏览器的 localStorage 中，JSON 导入/导出可用于备份和分享地图；GitHub Pages 与本地开发环境使用不同来源，因此两处 localStorage 数据互不共享。Phaser 带来的包体积提示不影响 GitHub Pages 部署成功。
+
 ## 当前限制
 
 - dash 是基础、可调的 v1 机制，并非完整的高阶动作系统。
