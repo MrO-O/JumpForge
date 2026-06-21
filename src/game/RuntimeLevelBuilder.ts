@@ -38,6 +38,7 @@ export interface RuntimeLevelBuildResult {
   climbWalls: Phaser.Physics.Arcade.StaticGroup;
   staminaRefills: Phaser.Physics.Arcade.StaticGroup;
   checkpoints: Phaser.Physics.Arcade.StaticGroup;
+  crumbleBlocks: Phaser.Physics.Arcade.StaticGroup;
   spawnPosition: RuntimePosition | null;
   goalPosition: RuntimePosition | null;
   entitiesByCell: Map<RuntimeCellKey, RuntimeTileEntity>;
@@ -112,6 +113,7 @@ const tileBuildHandlers: Partial<Record<RuntimeTileKind, TileBuildHandler>> = {
   dashCrystal: (context) => { context.entity.trigger = createPhysicalTile(context, context.result.dashCrystals); },
   staminaRefill: (context) => { context.entity.trigger = createPhysicalTile(context, context.result.staminaRefills); },
   checkpoint: (context) => { context.entity.trigger = createPhysicalTile(context, context.result.checkpoints); },
+  crumbleBlock: (context) => { context.entity.collider = createPhysicalTile(context, context.result.crumbleBlocks); },
 };
 
 /** Builds registry-driven visuals and physics primitives; behavior is bound by tileRuntimeHandlers. */
@@ -131,6 +133,7 @@ export function buildRuntimeLevel(scene: Phaser.Scene, level: LevelDocument): Ru
     climbWalls: scene.physics.add.staticGroup(),
     staminaRefills: scene.physics.add.staticGroup(),
     checkpoints: scene.physics.add.staticGroup(),
+    crumbleBlocks: scene.physics.add.staticGroup(),
     spawnPosition: null,
     goalPosition: null,
     entitiesByCell: new Map(),

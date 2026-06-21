@@ -3,6 +3,8 @@ import type { PlayerBody, PlayerController, WallContact } from './PlayerControll
 import type { DashBlockCluster, RuntimeLevelBuildResult, RuntimeTileEntity } from './RuntimeLevelBuilder';
 import { toCellKey, type RuntimeCellKey, type RuntimeLevelState } from './runtimeTypes';
 
+export const crumbleBlockDelayMs = 500;
+
 export interface TileRuntimeHandlerCallbacks {
   onDeath: (message: string) => void;
   onComplete: () => void;
@@ -50,6 +52,7 @@ function setClusterColliderEnabled(cluster: DashBlockCluster, enabled: boolean):
 /** Concentrates tile interaction state and Phaser collision wiring for Phase 4A/4B. */
 export class TileRuntimeController {
   private readonly switchCooldowns = new Map<RuntimeCellKey, number>();
+  private readonly crumbleTimers = new Map<RuntimeCellKey, Phaser.Time.TimerEvent>();
   private lastDoorPromptAt = Number.NEGATIVE_INFINITY;
 
   constructor(
@@ -68,6 +71,7 @@ export class TileRuntimeController {
     this.scene.physics.add.collider(this.player, this.level.lockedDoors, (_player, door) => this.handleLockedDoor(door));
     this.scene.physics.add.collider(this.player, this.level.switchDoors);
     this.scene.physics.add.collider(this.player, this.level.dashBlocks, (_player, dashBlock) => this.handleDashBlock(dashBlock));
+    this.scene.physics.add.collider(this.player, this.level.crumbleBlocks, (_player, crumbleBlock) => this.handleCrumbleBlock(crumbleBlock));
     this.scene.physics.add.overlap(this.player, this.level.spikes, () => this.callbacks.onDeath('You touched spikes.'));
     this.scene.physics.add.overlap(this.player, this.level.goals, () => this.callbacks.onComplete());
     this.scene.physics.add.collider(this.player, this.level.springs, (_player, spring) => this.handleSpring(spring));
@@ -80,6 +84,8 @@ export class TileRuntimeController {
 
   resetForAttempt(preserveCheckpoint = false): void {
     this.switchCooldowns.clear();
+    for (const timer of this.crumbleTimers.values()) timer.remove(false);
+    this.crumbleTimers.clear();
     this.lastDoorPromptAt = Number.NEGATIVE_INFINITY;
     for (const entity of this.level.entitiesByCell.values()) {
       switch (entity.kind) {
@@ -110,6 +116,9 @@ export class TileRuntimeController {
           break;
         case 'checkpoint':
           setCheckpointAppearance(entity, preserveCheckpoint && entity.cellKey === this.state.activeCheckpointCell);
+          break;
+        case 'crumbleBlock':
+          this.restoreCrumbleBlock(entity);
           break;
         default:
           break;
@@ -189,6 +198,41 @@ export class TileRuntimeController {
       if (candidate.kind === 'checkpoint') setCheckpointAppearance(candidate, candidate.cellKey === entity.cellKey);
     }
     this.callbacks.onMessage('Checkpoint reached.');
+  }
+
+  private handleCrumbleBlock(object: unknown): void {
+    const entity = getEntity(this.level, object);
+    if (!entity || this.state.triggeredCrumbleBlockCells.has(entity.cellKey) || this.state.brokenCrumbleBlockCells.has(entity.cellKey)) return;
+    const blockBody = entity.collider?.body as Phaser.Physics.Arcade.StaticBody | undefined;
+    if (!blockBody) return;
+    const playerBody = this.player.body;
+    const landedFromAbove = playerBody.velocity.y >= 0 && playerBody.bottom <= blockBody.top + 8;
+    if (!landedFromAbove) return;
+
+    this.state.triggeredCrumbleBlockCells.add(entity.cellKey);
+    entity.visual.setFillStyle(0xf59e0b);
+    entity.visual.setAlpha(0.7);
+    entity.glyph.setAlpha(0.7);
+    this.callbacks.onMessage('Crumble block cracking...');
+    this.crumbleTimers.set(entity.cellKey, this.scene.time.delayedCall(crumbleBlockDelayMs, () => this.breakCrumbleBlock(entity)));
+  }
+
+  private breakCrumbleBlock(entity: RuntimeTileEntity): void {
+    this.crumbleTimers.delete(entity.cellKey);
+    if (!this.state.triggeredCrumbleBlockCells.has(entity.cellKey)) return;
+    this.state.brokenCrumbleBlockCells.add(entity.cellKey);
+    this.state.hiddenTileCells.add(entity.cellKey);
+    setVisible(entity, false);
+    setColliderEnabled(entity, false);
+    this.callbacks.onMessage('Crumble block broke.');
+  }
+
+  private restoreCrumbleBlock(entity: RuntimeTileEntity): void {
+    setVisible(entity, true);
+    setColliderEnabled(entity, true);
+    entity.visual.setFillStyle(entity.color);
+    entity.visual.setAlpha(1);
+    entity.glyph.setAlpha(1);
   }
 
   private handleLockedDoor(object: unknown): void {
@@ -289,6 +333,7 @@ export class TileRuntimeController {
       || entity.kind === 'lockedDoor'
       || entity.kind === 'switchDoor'
       || entity.kind === 'dashBlock'
+      || entity.kind === 'crumbleBlock'
       || entity.kind === 'climbWall';
   }
 }

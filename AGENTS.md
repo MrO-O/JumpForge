@@ -18,6 +18,7 @@ JumpForge 是浏览器端 2D 平台跳跃关卡设计工具。核心不是单纯
 - Phase 5A：Movement Tuning Profiles、关卡级预设与自定义调参、旧关卡 Balanced fallback。
 - Phase 5B：wallJump、wallClimb、climbWall、staminaRefill 与运行期体力状态。
 - Phase 6A：checkpoint tile、运行期检查点激活与最近检查点重生。
+- Phase 6B：crumbleBlock tile、运行期触发延迟与死亡/重开恢复。
 - 后续能力扩展必须由用户明确提出。
 
 ## Commands
@@ -53,6 +54,7 @@ npm run preview
 - runtime state 不得回写 LevelDocument。
 - 退出测试后编辑器地图必须保持不变。
 - Checkpoint activation and the active respawn position are TestScene runtime state only; never write them back to `LevelDocument` or level JSON.
+- Crumble block trigger, timer, and broken state are runtime-only. Restore them on both death and full test restart.
 
 ## Global Input Settings
 
@@ -67,6 +69,7 @@ npm run preview
 - 新增 tile 时同步更新：tileRegistry、必要的 validateLevel 规则、runtime handler、editor palette 表现、README 或相关文档。
 - v1 tile：empty、solid、oneWayPlatform、spike、spawn、goal、spring、key、lockedDoor、switch、switchDoor、dashCrystal、dashBlock、climbWall、staminaRefill。
 - Checkpoint tiles are non-unique runtime triggers. Death keeps the active checkpoint while a full test restart clears it and returns to the initial spawn.
+- Crumble blocks use centralized runtime handlers; do not put their timers or collision toggles in `TestScene`.
 
 ## Ability System Rules
 

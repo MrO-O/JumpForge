@@ -21,6 +21,7 @@ export const tileRegistry: TileRegistry = {
   climbWall: defineTile({ id: 'climbWall', name: '可攀墙面', category: 'ability', collision: 'solid', hazardous: false, interactive: true, requiredAbilities: ['wallClimb'], tags: ['wall', 'climb', 'ability'], editor: { color: '#0f766e', glyph: '╫', label: '可攀墙面', paletteOrder: 130 }, runtime: { kind: 'climbWall' } }),
   staminaRefill: defineTile({ id: 'staminaRefill', name: '体力补给', category: 'ability', collision: 'none', hazardous: false, interactive: true, requiredAbilities: ['wallClimb'], tags: ['stamina', 'refill', 'ability'], editor: { color: '#34d399', glyph: '✦', label: '体力补给', paletteOrder: 140 }, runtime: { kind: 'staminaRefill' } }),
   checkpoint: defineTile({ id: 'checkpoint', name: '检查点', category: 'interaction', collision: 'none', hazardous: false, interactive: true, tags: ['checkpoint', 'respawn'], editor: { color: '#f97316', glyph: '⚑', label: '检查点', paletteOrder: 145 }, runtime: { kind: 'checkpoint' } }),
+  crumbleBlock: defineTile({ id: 'crumbleBlock', name: '碎裂平台', category: 'terrain', collision: 'solid', hazardous: false, interactive: true, tags: ['platform', 'crumble', 'timing'], editor: { color: '#b45309', glyph: '▧', label: '碎裂平台', paletteOrder: 150 }, runtime: { kind: 'crumbleBlock' } }),
 };
 
 export function getTileDefinition(tileId: string): TileDefinition | undefined {

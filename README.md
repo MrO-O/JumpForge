@@ -2,7 +2,7 @@
 
 JumpForge 是浏览器端 2D 平台跳跃关卡设计工具。它以地图编辑器、可扩展 tile 机制和可选动作能力为核心，用于实验动作挑战与解谜关卡。
 
-当前完成 **Phase 6A：Checkpoint / Respawn System**。编辑器始终是本地优先的工作台；测试模式只使用关卡深拷贝快照，所有运行中状态都不会修改编辑器地图或 localStorage。
+当前完成 **Phase 6B：Crumble Block / Fragile Platform**。编辑器始终是本地优先的工作台；测试模式只使用关卡深拷贝快照，所有运行中状态都不会修改编辑器地图或 localStorage。
 
 ## 运行
 
@@ -82,6 +82,12 @@ Controls are stored as a global browser preference in localStorage under `jumpfo
 `checkpoint` is a reusable interaction tile that records a respawn point for the current Phaser test only. Touching it makes it visibly active and updates the test sidebar. On death from spikes or falling out of the level, JumpForge restores the usual per-life mechanism state (keys, doors, switches, crystals, dash blocks, and stamina refills) but respawns the player at the latest checkpoint. Pressing the configured restart key performs a full test restart instead: it clears checkpoint progress and returns to the initial `spawn`.
 
 Checkpoint tiles are exported as ordinary level tiles, so shared JSON retains their placement. Their activated state and any runtime respawn position are never saved to `LevelDocument` or exported JSON. Place checkpoints near safe ground with clear headroom; the v1 respawn point is the checkpoint center slightly above the tile.
+
+## Crumble blocks
+
+`crumbleBlock` is a solid, reusable fragile-platform tile. Landing on its top starts a 500ms delay: it changes color to show that it is cracking, then disappears and stops colliding. Side contact does not trigger it. Each tile tracks its own delay and broken state in the Phaser runtime only; neither state is written to `LevelDocument` or exported JSON.
+
+Death and the configured restart key restore every crumble block, including any block that was cracking or already broken. When combining crumble blocks with checkpoints, place the checkpoint on stable terrain or another safe area so a collapsed route cannot create an accidental soft lock.
 
 ## 部署到 GitHub Pages
 

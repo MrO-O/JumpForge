@@ -44,4 +44,13 @@ const checkpointTrialLevel = paint(
   ],
 );
 
-export const sampleLevels: readonly LevelDocument[] = [basicJumpLevel, keyDoorLevel, dashLevel, wallTrainingLevel, checkpointTrialLevel];
+const crumbleTrialLevel = paint(
+  createEmptyLevel({ id: 'sample-crumble-trial', title: 'Crumble Trial', author: 'JumpForge', width: 18, height: 10 }),
+  [
+    [5, 8, 'checkpoint'],
+    [7, 9, 'empty'], [8, 9, 'empty'], [9, 9, 'empty'], [10, 9, 'empty'], [11, 9, 'empty'],
+    [7, 8, 'crumbleBlock'], [8, 8, 'crumbleBlock'], [9, 8, 'crumbleBlock'], [10, 8, 'crumbleBlock'], [11, 8, 'crumbleBlock'],
+  ],
+);
+
+export const sampleLevels: readonly LevelDocument[] = [basicJumpLevel, keyDoorLevel, dashLevel, wallTrainingLevel, checkpointTrialLevel, crumbleTrialLevel];

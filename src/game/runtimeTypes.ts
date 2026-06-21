@@ -45,6 +45,8 @@ export interface RuntimeLevelState {
   isClimbing: boolean;
   wallSide: WallSide | null;
   consumedStaminaRefillCells: Set<RuntimeCellKey>;
+  triggeredCrumbleBlockCells: Set<RuntimeCellKey>;
+  brokenCrumbleBlockCells: Set<RuntimeCellKey>;
 }
 
 export const createRuntimeLevelState = (dashEnabled = false): RuntimeLevelState => ({
@@ -77,6 +79,8 @@ export const createRuntimeLevelState = (dashEnabled = false): RuntimeLevelState 
   isClimbing: false,
   wallSide: null,
   consumedStaminaRefillCells: new Set(),
+  triggeredCrumbleBlockCells: new Set(),
+  brokenCrumbleBlockCells: new Set(),
 });
 
 /** Restore per-life mechanic progress; a death may retain an already activated checkpoint. */
@@ -108,6 +112,8 @@ export function resetRuntimeAttempt(
   state.isClimbing = false;
   state.wallSide = null;
   state.consumedStaminaRefillCells.clear();
+  state.triggeredCrumbleBlockCells.clear();
+  state.brokenCrumbleBlockCells.clear();
   if (!preserveCheckpoint) {
     state.activeCheckpointCell = null;
     state.activatedCheckpointCells.clear();

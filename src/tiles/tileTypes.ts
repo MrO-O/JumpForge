@@ -16,7 +16,8 @@ export type TileId =
   | 'dashBlock'
   | 'climbWall'
   | 'staminaRefill'
-  | 'checkpoint';
+  | 'checkpoint'
+  | 'crumbleBlock';
 
 export type TileCategory = 'terrain' | 'hazard' | 'marker' | 'interaction' | 'ability';
 export type CollisionKind = 'none' | 'solid' | 'oneWay';
