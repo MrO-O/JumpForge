@@ -1,4 +1,7 @@
 import Phaser from 'phaser';
+import { formatKeyBinding } from '../input/keybindingLabels';
+import type { KeyBindingMap } from '../input/inputTypes';
+import { GameInput } from './GameInput';
 import { resolveMovementProfile } from './movementPresets';
 import type { LevelDocument } from '../levels/levelTypes';
 import { configurePlayerCollisionBody, PlayerController, type PlayerBody } from './PlayerController';
@@ -9,6 +12,7 @@ import { TileRuntimeController } from './tileRuntimeHandlers';
 
 export interface TestSceneOptions {
   level: LevelDocument;
+  keybindings: KeyBindingMap;
   onExit: () => void;
   onComplete?: () => void;
 }
@@ -19,6 +23,7 @@ export class TestScene extends Phaser.Scene {
   private builtLevel?: RuntimeLevelBuildResult;
   private player?: PlayerBody;
   private controller?: PlayerController;
+  private gameInput?: GameInput;
   private tileRuntime?: TileRuntimeController;
   private hud?: Phaser.GameObjects.Text;
   private respawnEvent?: Phaser.Time.TimerEvent;
@@ -48,6 +53,7 @@ export class TestScene extends Phaser.Scene {
       : movement.preset.name;
     this.movementTuning = movement.tuning;
     this.state = createRuntimeLevelState(this.dashEnabled);
+    this.gameInput = new GameInput(this, this.options.keybindings);
     const worldWidth = level.width * level.tileSize;
     this.worldHeight = level.height * level.tileSize;
     this.cameras.main.setBackgroundColor('#0b1020');
@@ -68,7 +74,6 @@ export class TestScene extends Phaser.Scene {
       this.add.text(worldWidth / 2, this.worldHeight / 2, '无法启动：缺少 spawn 或 goal', {
         color: '#fecaca', fontFamily: 'system-ui, sans-serif', fontSize: '20px', align: 'center',
       }).setOrigin(0.5);
-      this.input.keyboard?.once('keydown-ESC', this.exitToEditor, this);
       return;
     }
 
@@ -81,13 +86,16 @@ export class TestScene extends Phaser.Scene {
     this.tileRuntime.bind();
     this.cameras.main.setBounds(0, 0, worldWidth, this.worldHeight);
     this.cameras.main.startFollow(this.player!, true, 0.12, 0.12);
-    this.input.keyboard?.on('keydown-R', this.restartLevel, this);
-    this.input.keyboard?.on('keydown-ESC', this.exitToEditor, this);
     this.state.currentMessage = 'Reach the gold goal.';
     this.refreshHud();
   }
 
   update(_time: number, deltaMs: number): void {
+    if (this.gameInput?.justDown('exitTest')) {
+      this.exitToEditor();
+      return;
+    }
+    if (this.gameInput?.justDown('restart')) this.restartLevel();
     if (!this.player || !this.controller || !this.builtLevel) return;
     this.state.elapsedMs += deltaMs;
     if (!this.state.isDead && !this.state.isComplete) {
@@ -109,6 +117,7 @@ export class TestScene extends Phaser.Scene {
       wallClimbEnabled: this.wallClimbEnabled,
       runtimeState: this.state,
       tuning: this.movementTuning ?? resolveMovementProfile(undefined).tuning,
+      input: this.gameInput!,
       getWallContact: () => this.tileRuntime?.getWallContact() ?? null,
     });
   }
@@ -162,17 +171,19 @@ export class TestScene extends Phaser.Scene {
 
   private shutdown(): void {
     this.respawnEvent?.remove(false);
-    this.input.keyboard?.off('keydown-R', this.restartLevel, this);
-    this.input.keyboard?.off('keydown-ESC', this.exitToEditor, this);
+    this.gameInput?.dispose();
+    this.gameInput = undefined;
     this.controller?.setEnabled(false);
     this.tileRuntime = undefined;
   }
 
   private refreshHud(): void {
+    const bindings = this.options.keybindings;
     this.hud?.setText([
-      '← → move · Space / ↑ jump · C grab / climb · R restart · Esc return',
+      `${formatKeyBinding(bindings.moveLeft)} / ${formatKeyBinding(bindings.moveRight)} move · ${formatKeyBinding(bindings.jump)} / ${formatKeyBinding(bindings.moveUp)} jump`,
+      `${formatKeyBinding(bindings.grab)} grab / climb · ${formatKeyBinding(bindings.restart)} restart · ${formatKeyBinding(bindings.exitTest)} return`,
       `Movement: ${this.movementPresetName}`,
-      `Shift / X dash · Dash: ${this.controller?.dashStatus ?? 'Disabled'}`,
+      `${formatKeyBinding(bindings.dash)} dash · Dash: ${this.controller?.dashStatus ?? 'Disabled'}`,
       `Wall: ${this.state.isClimbing ? 'CLIMB' : this.state.isWallSliding ? 'SLIDE' : '—'} · Stamina: ${this.controller?.wallClimbEnabled ? `${Math.ceil(this.state.currentStamina)}/${Math.round(this.controller.tuning.maxStamina)}` : '—'}`,
       `Static collision rects: ${this.mergedStaticColliderCount} · Dash block clusters: ${this.dashBlockClusterCount}`,
       `Keys: ${this.state.keyCount} · Switch doors: ${this.state.switchDoorsOpen ? 'OPEN' : 'CLOSED'}`,

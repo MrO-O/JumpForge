@@ -52,6 +52,12 @@ npm run preview
 - runtime state 不得回写 LevelDocument。
 - 退出测试后编辑器地图必须保持不变。
 
+## Global Input Settings
+
+- Keybindings are global browser preferences, stored separately in localStorage; they never belong to `LevelDocument` or exported level JSON.
+- Do not add new hard-coded gameplay keys in `PlayerController` or `TestScene`; route runtime input through the shared keybinding map/input helper.
+- When adding an input action, update default keybindings, the Controls settings UI, HUD hints, and README together.
+
 ## Tile System Rules
 
 - tile 行为必须通过 tileRegistry 的 `runtime.kind` 和集中 runtime handler 管理。

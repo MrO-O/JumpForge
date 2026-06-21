@@ -8,6 +8,9 @@ import type { LevelDocument } from '../levels/levelTypes';
 import { exportLevelToJson, importLevelFromJson } from '../storage/importExport';
 import { deleteLevel, duplicateLevel, listLevels, saveLevel, storedLevelIds } from '../storage/levelRepository';
 import { LevelLibrary } from './LevelLibrary';
+import { ControlsSettings } from '../input/ControlsSettings';
+import type { KeyBindingMap } from '../input/inputTypes';
+import { loadKeybindings, saveKeybindings } from '../input/keybindingStorage';
 import '../styles/app.css';
 
 function downloadJson(filename: string, content: string): void {
@@ -28,6 +31,8 @@ export function App() {
     try { return listLevels(); } catch { return []; }
   });
   const [notice, setNotice] = useState<string>('');
+  const [keybindings, setKeybindings] = useState<KeyBindingMap>(() => loadKeybindings());
+  const [controlsOpen, setControlsOpen] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
 
   const refreshLevels = () => {
@@ -68,6 +73,14 @@ export function App() {
     setTestSnapshot(null);
     setMode('editor');
   };
+  const updateKeybindings = (next: KeyBindingMap) => {
+    try {
+      setKeybindings(saveKeybindings(next));
+    } catch {
+      setKeybindings(next);
+      setNotice('Unable to save controls in browser storage. They will remain active until this page is reloaded.');
+    }
+  };
   const exportLevel = (level: LevelDocument) => {
     try { downloadJson(`${level.id}.json`, exportLevelToJson(level)); setNotice('JSON 已导出。'); }
     catch (error) { setNotice(error instanceof Error ? error.message : '导出失败。'); }
@@ -107,6 +120,8 @@ export function App() {
         <EditorWorkspace level={activeLevel} onChange={setActiveLevel} onSave={saveActive} onTest={startTest} onBack={() => { refreshLevels(); setMode('library'); }} onNotice={setNotice} />
       )}
       <input ref={importInputRef} className="visually-hidden" type="file" accept="application/json,.json" onChange={importFile} />
+      {(mode === 'library' || !activeLevel) && <button type="button" className="app-controls-button secondary-button" onClick={() => setControlsOpen(true)}>Controls</button>}
+      {controlsOpen && <ControlsSettings bindings={keybindings} onChange={updateKeybindings} onClose={() => setControlsOpen(false)} />}
       {notice && <div className="app-notice" role="status">{notice}<button type="button" aria-label="关闭提示" onClick={() => setNotice('')}>×</button></div>}
     </>
   );

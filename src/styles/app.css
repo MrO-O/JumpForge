@@ -92,7 +92,26 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .validation-panel li + li { margin-top: 5px; }
 .app-notice { position: fixed; z-index: 20; right: 20px; bottom: 20px; max-width: min(520px, calc(100% - 40px)); display: flex; align-items: start; gap: 14px; padding: 12px 13px 12px 15px; color: #dce8f8; background: #1d2b44; border: 1px solid #456188; border-radius: 10px; box-shadow: 0 14px 40px rgb(0 0 0 / .35); font-size: .88rem; line-height: 1.4; }
 .app-notice button { flex: 0 0 auto; padding: 0 4px; color: #dce8f8; background: transparent; font-size: 1.2rem; line-height: 1; }
+.app-controls-button { position: fixed; z-index: 19; top: 14px; right: 18px; }
 .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+.settings-backdrop { position: fixed; z-index: 30; inset: 0; display: grid; place-items: center; padding: 28px; background: rgb(3 7 18 / .72); }
+.controls-settings { width: min(690px, 100%); max-height: min(760px, 100%); overflow: auto; padding: 22px; color: #e5edf9; background: #10182a; border: 1px solid #456188; border-radius: 13px; box-shadow: 0 24px 70px rgb(0 0 0 / .48); }
+.controls-settings-header { display: flex; align-items: start; justify-content: space-between; gap: 18px; padding-bottom: 15px; border-bottom: 1px solid #283955; }
+.controls-settings-header .eyebrow { margin-bottom: 4px; }
+.controls-settings-header h2 { margin: 0; font-size: 1.5rem; }
+.controls-intro { margin: 15px 0; color: #a9b7d0; font-size: .88rem; line-height: 1.5; }
+.recording-notice, .controls-message { margin: 12px 0; padding: 10px; color: #dbeafe; background: #183657; border: 1px solid #2f689d; border-radius: 8px; font-size: .84rem; line-height: 1.45; }
+.recording-notice { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.controls-list { border-top: 1px solid #283955; }
+.control-row { display: grid; grid-template-columns: minmax(120px, 1fr) minmax(290px, 1.5fr); align-items: center; gap: 14px; padding: 11px 0; border-bottom: 1px solid #283955; }
+.control-row strong { font-size: .9rem; }
+.binding-slots { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
+.binding-button { min-width: 92px; color: #dce8f8; background: #24324d; border: 1px solid #456188; border-radius: 7px; padding: 7px 9px; font-size: .82rem; }
+.binding-button:hover, .binding-button.is-recording { background: #185167; border-color: #67e8f9; }
+.text-button { padding: 5px 6px; color: #a9b7d0; background: transparent; font-size: .76rem; }
+.text-button:hover { color: #e5edf9; background: #24324d; }
+.controls-settings-footer { display: flex; justify-content: end; padding-top: 16px; }
 
 .testing-workspace { min-height: 100vh; display: flex; flex-direction: column; background: #080d18; }
 .testing-toolbar { min-height: 62px; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 8px 20px; border-bottom: 1px solid #2a3958; background: #10182a; }

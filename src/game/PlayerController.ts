@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { GameInput } from './GameInput';
 import type { RuntimeLevelState } from './runtimeTypes';
 import type { PlayerTuning } from './playerTuning';
 
@@ -30,14 +31,11 @@ export interface PlayerControllerOptions {
   wallClimbEnabled: boolean;
   runtimeState: RuntimeLevelState;
   tuning: Readonly<PlayerTuning>;
+  input: GameInput;
   getWallContact: () => WallContact | null;
 }
 
 export class PlayerController {
-  private readonly cursors: Phaser.Types.Input.Keyboard.CursorKeys;
-  private readonly jumpKey: Phaser.Input.Keyboard.Key;
-  private readonly grabKey: Phaser.Input.Keyboard.Key;
-  private readonly dashKeys: Phaser.Input.Keyboard.Key[];
   readonly tuning: Readonly<PlayerTuning>;
   private lastGroundedAt = Number.NEGATIVE_INFINITY;
   private jumpBufferedUntil = Number.NEGATIVE_INFINITY;
@@ -51,13 +49,6 @@ export class PlayerController {
     private readonly options: PlayerControllerOptions,
   ) {
     this.tuning = options.tuning;
-    this.cursors = scene.input.keyboard!.createCursorKeys();
-    this.jumpKey = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-    this.grabKey = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.C);
-    this.dashKeys = [
-      scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SHIFT),
-      scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.X),
-    ];
     this.player.body.setMaxVelocity(this.tuning.dashSpeed, this.tuning.maxFallSpeed);
     this.player.body.setCollideWorldBounds(true);
     this.options.runtimeState.currentStamina = this.tuning.maxStamina;
@@ -108,11 +99,11 @@ export class PlayerController {
       return;
     }
 
-    if (Phaser.Input.Keyboard.JustDown(this.jumpKey) || Phaser.Input.Keyboard.JustDown(this.cursors.up!)) {
+    if (this.options.input.justDown('jump') || this.options.input.justDown('moveUp')) {
       this.jumpBufferedUntil = now + this.tuning.jumpBufferMs;
     }
 
-    const direction = Number(this.cursors.right?.isDown) - Number(this.cursors.left?.isDown);
+    const direction = Number(this.options.input.isDown('moveRight')) - Number(this.options.input.isDown('moveLeft'));
     if (direction !== 0) this.facingX = direction;
 
     const canJump = now <= this.jumpBufferedUntil && now - this.lastGroundedAt <= this.tuning.coyoteTimeMs;
@@ -137,10 +128,10 @@ export class PlayerController {
       body.setVelocityX(Phaser.Math.Linear(body.velocity.x, targetVelocity, Math.min(1, horizontalRate * deltaSeconds / this.tuning.maxMoveSpeed)));
     }
 
-    if ((Phaser.Input.Keyboard.JustUp(this.jumpKey) || Phaser.Input.Keyboard.JustUp(this.cursors.up!)) && body.velocity.y < 0) {
+    if ((this.options.input.justUp('jump') || this.options.input.justUp('moveUp')) && body.velocity.y < 0) {
       body.setVelocityY(body.velocity.y * this.tuning.lowJumpMultiplier);
     }
-    const holdingJump = this.jumpKey.isDown || this.cursors.up?.isDown;
+    const holdingJump = this.options.input.isDown('jump') || this.options.input.isDown('moveUp');
     const gravityMultiplier = body.velocity.y < 0 && holdingJump ? 1 : this.tuning.fallGravityMultiplier;
     body.setVelocityY(Math.min(this.tuning.maxFallSpeed, body.velocity.y + this.tuning.gravity * gravityMultiplier * deltaSeconds));
 
@@ -197,7 +188,7 @@ export class PlayerController {
   }
 
   private isDashPressed(): boolean {
-    return this.dashKeys.some((key) => Phaser.Input.Keyboard.JustDown(key));
+    return this.options.input.justDown('dash');
   }
 
   /** Only a downward-facing collision is ground; side contacts and upward hits never qualify. */
@@ -220,9 +211,9 @@ export class PlayerController {
 
   private updateClimb(wallContact: WallContact | null, deltaSeconds: number): boolean {
     const state = this.options.runtimeState;
-    if (!this.options.wallClimbEnabled || !wallContact?.climbable || !this.grabKey.isDown || state.currentStamina <= 0) return false;
-    const up = this.cursors.up?.isDown ?? false;
-    const down = this.cursors.down?.isDown ?? false;
+    if (!this.options.wallClimbEnabled || !wallContact?.climbable || !this.options.input.isDown('grab') || state.currentStamina <= 0) return false;
+    const up = this.options.input.isDown('moveUp');
+    const down = this.options.input.isDown('moveDown');
     const cost = (up ? this.tuning.climbUpCostPerSecond : this.tuning.climbStillCostPerSecond) * deltaSeconds;
     state.currentStamina = Math.max(0, state.currentStamina - cost);
     if (state.currentStamina <= 0) {
@@ -239,8 +230,8 @@ export class PlayerController {
 
   private startDash(now: number): void {
     const state = this.options.runtimeState;
-    const x = Number(this.cursors.right?.isDown) - Number(this.cursors.left?.isDown);
-    const y = Number(this.cursors.down?.isDown) - Number(this.cursors.up?.isDown);
+    const x = Number(this.options.input.isDown('moveRight')) - Number(this.options.input.isDown('moveLeft'));
+    const y = Number(this.options.input.isDown('moveDown')) - Number(this.options.input.isDown('moveUp'));
     const direction = new Phaser.Math.Vector2(x, y);
     if (direction.lengthSq() === 0) direction.set(this.facingX, 0);
     direction.normalize();

@@ -2,16 +2,18 @@ import { useEffect, useRef } from 'react';
 import Phaser from 'phaser';
 import { cloneLevel } from '../levels/levelCommands';
 import type { LevelDocument } from '../levels/levelTypes';
+import type { KeyBindingMap } from '../input/inputTypes';
 import { TestScene } from './TestScene';
 
 interface PhaserGameHostProps {
   level: LevelDocument;
+  keybindings: KeyBindingMap;
   onExit: () => void;
   onComplete?: () => void;
 }
 
 /** React owns the container lifecycle; Phaser owns only its isolated game state. */
-export function PhaserGameHost({ level, onExit, onComplete }: PhaserGameHostProps) {
+export function PhaserGameHost({ level, keybindings, onExit, onComplete }: PhaserGameHostProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const snapshotRef = useRef<LevelDocument>(cloneLevel(level));
   const exitRef = useRef(onExit);
@@ -36,6 +38,7 @@ export function PhaserGameHost({ level, onExit, onComplete }: PhaserGameHostProp
       physics: { default: 'arcade', arcade: { gravity: { x: 0, y: 0 }, debug: false } },
       scene: [new TestScene({
         level: snapshot,
+        keybindings,
         onExit: () => { if (!disposed) exitRef.current(); },
         onComplete: () => { if (!disposed) completeRef.current?.(); },
       })],

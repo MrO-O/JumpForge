@@ -59,6 +59,24 @@ dash 可用次数、水晶消耗、方块破坏与玩家冲刺方向均只保存
 
 Phaser 会使当前生产包较大，Vite 可能显示 chunk 体积提示；这不影响 `npm run build` 的成功结果。后续如有必要，可将测试运行时按需加载。
 
+## Global controls
+
+JumpForge supports global custom keyboard controls. Use the **Controls** button available in both the level library and editor to click a primary or secondary slot, then press the desired physical key. A secondary binding can be cleared, and **Reset to defaults** restores the complete default layout.
+
+Default controls are:
+
+- Move left/right: `Left Arrow` / `A`, `Right Arrow` / `D`
+- Move up/down: `Up Arrow` / `W`, `Down Arrow` / `S`
+- Jump: `Space` (moving up also jumps)
+- Dash: `Left Shift` / `X`
+- Grab / climb: `C` / `Z`
+- Restart test: `R`
+- Exit test: `Esc`
+
+Each physical key can belong to only one action. While recording a binding, modifier combinations, `Tab`, and `F5` are rejected; clear the existing binding first when a key is already in use. The test toolbar always has a return button, so changing the exit binding cannot trap a test session.
+
+Controls are stored as a global browser preference in localStorage under `jumpforge:keybindings:v1`. They are not part of `LevelDocument`, do not appear in exported level JSON, and importing a level never changes them. GitHub Pages and local development use different browser origins, so their controls (like their local levels) are stored independently.
+
 ## 部署到 GitHub Pages
 
 1. 在 GitHub 创建仓库并将代码推送到 `main` 分支。
