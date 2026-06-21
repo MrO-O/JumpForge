@@ -66,6 +66,7 @@ export class TileRuntimeController {
 
   bind(): void {
     this.scene.physics.add.collider(this.player, this.level.solids);
+    this.scene.physics.add.collider(this.player, this.level.partialSolids);
     this.scene.physics.add.collider(this.player, this.level.climbWalls);
     this.scene.physics.add.collider(this.player, this.level.oneWayPlatforms, undefined, (_player, platform) => this.canLandOnOneWay(platform));
     this.scene.physics.add.collider(this.player, this.level.lockedDoors, (_player, door) => this.handleLockedDoor(door));
@@ -156,7 +157,7 @@ export class TileRuntimeController {
         return { side, climbable: false };
       }
       const entity = this.level.entitiesByCell.get(cellKey);
-      if (entity?.collider && this.isWallEntity(entity) && this.isColliderEnabled(entity)) {
+      if (entity?.collider && this.isWallEntity(entity) && this.isColliderEnabled(entity) && this.hasActualWallContact(entity)) {
         return { side, climbable: false };
       }
     }
@@ -327,6 +328,14 @@ export class TileRuntimeController {
     return body?.enable === true;
   }
 
+  private hasActualWallContact(entity: RuntimeTileEntity): boolean {
+    if (!entity.collisionBox) return true;
+    const colliderBody = entity.collider?.body as Phaser.Physics.Arcade.StaticBody | undefined;
+    if (!colliderBody) return false;
+    const playerBody = this.player.body;
+    return playerBody.bottom > colliderBody.top + 1 && playerBody.top < colliderBody.bottom - 1;
+  }
+
   private isWallEntity(entity: RuntimeTileEntity): boolean {
     return entity.kind === 'solid'
       || entity.kind === 'spring'
@@ -334,6 +343,10 @@ export class TileRuntimeController {
       || entity.kind === 'switchDoor'
       || entity.kind === 'dashBlock'
       || entity.kind === 'crumbleBlock'
+      || entity.kind === 'halfBlockTop'
+      || entity.kind === 'halfBlockBottom'
+      || entity.kind === 'halfBlockLeft'
+      || entity.kind === 'halfBlockRight'
       || entity.kind === 'climbWall';
   }
 }

@@ -53,4 +53,9 @@ const crumbleTrialLevel = paint(
   ],
 );
 
-export const sampleLevels: readonly LevelDocument[] = [basicJumpLevel, keyDoorLevel, dashLevel, wallTrainingLevel, checkpointTrialLevel, crumbleTrialLevel];
+const smallBlocksTrialLevel = paint(
+  createEmptyLevel({ id: 'sample-small-blocks-trial', title: 'Small Blocks Trial', author: 'JumpForge', width: 18, height: 10 }),
+  [[4, 8, 'halfBlockTop'], [6, 8, 'halfBlockBottom'], [9, 7, 'halfBlockLeft'], [11, 7, 'halfBlockRight']],
+);
+
+export const sampleLevels: readonly LevelDocument[] = [basicJumpLevel, keyDoorLevel, dashLevel, wallTrainingLevel, checkpointTrialLevel, crumbleTrialLevel, smallBlocksTrialLevel];

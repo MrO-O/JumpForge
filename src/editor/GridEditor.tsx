@@ -33,12 +33,13 @@ export function GridEditor({ level, selectedTileId, onPaint, onHover }: GridEdit
             const x = index % level.width;
             const y = Math.floor(index / level.width);
             const tile = getTileDefinition(tileId);
+            const visualBox = tile?.visualBox ?? tile?.collisionBox;
             return (
               <button
                 className="grid-cell"
                 type="button"
                 key={`${x}-${y}`}
-                style={{ backgroundColor: tile?.editor.color ?? '#7f1d1d', width: level.tileSize, height: level.tileSize }}
+                style={{ backgroundColor: '#172033', width: level.tileSize, height: level.tileSize }}
                 aria-label={`cell ${x}, ${y}: ${tile?.name ?? tileId}`}
                 onPointerDown={(event) => {
                   event.preventDefault();
@@ -52,7 +53,7 @@ export function GridEditor({ level, selectedTileId, onPaint, onHover }: GridEdit
                 }}
                 onPointerLeave={() => onHover(x, y)}
               >
-                <span>{tile?.editor.glyph ?? '?'}</span>
+                <span className="grid-tile-visual" style={{ backgroundColor: tile?.editor.color ?? '#7f1d1d', left: `${(visualBox?.x ?? 0) * 100}%`, top: `${(visualBox?.y ?? 0) * 100}%`, width: `${(visualBox?.width ?? 1) * 100}%`, height: `${(visualBox?.height ?? 1) * 100}%` }}>{tile?.editor.glyph ?? '?'}</span>
               </button>
             );
           })}

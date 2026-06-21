@@ -17,11 +17,22 @@ export type TileId =
   | 'climbWall'
   | 'staminaRefill'
   | 'checkpoint'
-  | 'crumbleBlock';
+  | 'crumbleBlock'
+  | 'halfBlockTop'
+  | 'halfBlockBottom'
+  | 'halfBlockLeft'
+  | 'halfBlockRight';
 
 export type TileCategory = 'terrain' | 'hazard' | 'marker' | 'interaction' | 'ability';
 export type CollisionKind = 'none' | 'solid' | 'oneWay';
 export type RuntimeTileKind = TileId;
+
+export interface TileLocalBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
 
 export interface TileEditorVisual {
   color: string;
@@ -39,6 +50,8 @@ export interface TileDefinition {
   interactive: boolean;
   requiredAbilities?: AbilityId[];
   tags: string[];
+  collisionBox?: TileLocalBox;
+  visualBox?: TileLocalBox;
   editor: TileEditorVisual;
   runtime: { kind: RuntimeTileKind };
 }

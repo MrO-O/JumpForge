@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { mergeDashBlockClusters, mergeStaticTileRects, type DashBlockClusterRect, type MergeableStaticTileId, type MergedStaticRect } from './collisionMerge';
 import type { LevelDocument } from '../levels/levelTypes';
 import { getTileDefinition } from '../tiles/tileRegistry';
-import type { RuntimeTileKind } from '../tiles/tileTypes';
+import type { RuntimeTileKind, TileLocalBox } from '../tiles/tileTypes';
 import { toCellKey, type RuntimeCellKey, type RuntimePosition } from './runtimeTypes';
 
 export interface RuntimeTileEntity {
@@ -10,6 +10,9 @@ export interface RuntimeTileEntity {
   kind: RuntimeTileKind;
   x: number;
   y: number;
+  cellX: number;
+  cellY: number;
+  collisionBox?: TileLocalBox;
   color: number;
   visual: Phaser.GameObjects.Rectangle;
   glyph: Phaser.GameObjects.Text;
@@ -39,6 +42,7 @@ export interface RuntimeLevelBuildResult {
   staminaRefills: Phaser.Physics.Arcade.StaticGroup;
   checkpoints: Phaser.Physics.Arcade.StaticGroup;
   crumbleBlocks: Phaser.Physics.Arcade.StaticGroup;
+  partialSolids: Phaser.Physics.Arcade.StaticGroup;
   spawnPosition: RuntimePosition | null;
   goalPosition: RuntimePosition | null;
   entitiesByCell: Map<RuntimeCellKey, RuntimeTileEntity>;
@@ -63,7 +67,14 @@ function colorValue(color: string): number {
 }
 
 function createPhysicalTile(context: TileBuildContext, group: Phaser.Physics.Arcade.StaticGroup): Phaser.GameObjects.Rectangle {
-  const rectangle = context.scene.add.rectangle(context.entity.x, context.entity.y, context.tileSize, context.tileSize, context.entity.color).setVisible(false);
+  const box = context.entity.collisionBox ?? { x: 0, y: 0, width: 1, height: 1 };
+  const rectangle = context.scene.add.rectangle(
+    (context.entity.cellX + box.x + box.width / 2) * context.tileSize,
+    (context.entity.cellY + box.y + box.height / 2) * context.tileSize,
+    context.tileSize * box.width,
+    context.tileSize * box.height,
+    context.entity.color,
+  ).setVisible(false);
   rectangle.setData('runtimeCellKey', context.entity.cellKey);
   context.scene.physics.add.existing(rectangle, true);
   group.add(rectangle);
@@ -114,6 +125,10 @@ const tileBuildHandlers: Partial<Record<RuntimeTileKind, TileBuildHandler>> = {
   staminaRefill: (context) => { context.entity.trigger = createPhysicalTile(context, context.result.staminaRefills); },
   checkpoint: (context) => { context.entity.trigger = createPhysicalTile(context, context.result.checkpoints); },
   crumbleBlock: (context) => { context.entity.collider = createPhysicalTile(context, context.result.crumbleBlocks); },
+  halfBlockTop: (context) => { context.entity.collider = createPhysicalTile(context, context.result.partialSolids); },
+  halfBlockBottom: (context) => { context.entity.collider = createPhysicalTile(context, context.result.partialSolids); },
+  halfBlockLeft: (context) => { context.entity.collider = createPhysicalTile(context, context.result.partialSolids); },
+  halfBlockRight: (context) => { context.entity.collider = createPhysicalTile(context, context.result.partialSolids); },
 };
 
 /** Builds registry-driven visuals and physics primitives; behavior is bound by tileRuntimeHandlers. */
@@ -134,6 +149,7 @@ export function buildRuntimeLevel(scene: Phaser.Scene, level: LevelDocument): Ru
     staminaRefills: scene.physics.add.staticGroup(),
     checkpoints: scene.physics.add.staticGroup(),
     crumbleBlocks: scene.physics.add.staticGroup(),
+    partialSolids: scene.physics.add.staticGroup(),
     spawnPosition: null,
     goalPosition: null,
     entitiesByCell: new Map(),
@@ -151,16 +167,20 @@ export function buildRuntimeLevel(scene: Phaser.Scene, level: LevelDocument): Ru
       if (!tile || tile.runtime.kind === 'empty') continue;
       const cellX = index % level.width;
       const cellY = Math.floor(index / level.width);
-      const x = cellX * level.tileSize + level.tileSize / 2;
-      const y = cellY * level.tileSize + level.tileSize / 2;
+      const visualBox = tile.visualBox ?? tile.collisionBox ?? { x: 0, y: 0, width: 1, height: 1 };
+      const x = (cellX + visualBox.x + visualBox.width / 2) * level.tileSize;
+      const y = (cellY + visualBox.y + visualBox.height / 2) * level.tileSize;
       const color = colorValue(tile.editor.color);
       const entity: RuntimeTileEntity = {
         cellKey: toCellKey(cellX, cellY),
         kind: tile.runtime.kind,
         x,
         y,
+        cellX,
+        cellY,
+        collisionBox: tile.collisionBox,
         color,
-        visual: scene.add.rectangle(x, y, level.tileSize, level.tileSize, color).setDepth(0),
+        visual: scene.add.rectangle(x, y, level.tileSize * visualBox.width, level.tileSize * visualBox.height, color).setDepth(0),
         glyph: scene.add.text(x, y, tile.editor.glyph, {
           color: '#ffffff', fontFamily: 'system-ui, sans-serif', fontSize: `${Math.max(12, Math.floor(level.tileSize * 0.54))}px`,
         }).setOrigin(0.5).setDepth(1),

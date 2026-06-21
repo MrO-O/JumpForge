@@ -64,7 +64,8 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .grid-editor { min-height: 0; flex: 1; padding: 22px; display: flex; flex-direction: column; gap: 12px; }
 .grid-scroller { flex: 1; min-height: 260px; overflow: auto; padding: 14px; border: 1px solid #263657; border-radius: 10px; background: #070b15; }
 .level-grid { display: grid; width: max-content; border-top: 1px solid #31415f; border-left: 1px solid #31415f; user-select: none; touch-action: none; }
-.grid-cell { width: 32px; height: 32px; min-width: 0; padding: 0; display: grid; place-items: center; color: #fff; font-size: 16px; font-weight: 700; border: 0; border-right: 1px solid rgb(7 11 21 / .42); border-bottom: 1px solid rgb(7 11 21 / .42); border-radius: 0; }
+.grid-cell { position: relative; width: 32px; height: 32px; min-width: 0; padding: 0; display: block; color: #fff; font-size: 16px; font-weight: 700; border: 0; border-right: 1px solid rgb(7 11 21 / .42); border-bottom: 1px solid rgb(7 11 21 / .42); border-radius: 0; overflow: hidden; }
+.grid-tile-visual { position: absolute; display: grid; place-items: center; color: #fff; line-height: 1; }
 .grid-cell:hover { outline: 2px solid #f8fafc; outline-offset: -2px; filter: brightness(1.16); z-index: 1; }
 .grid-help, .editor-status { margin: 0; color: #8ca0c4; font-size: .82rem; }
 .editor-status { flex: 0 0 auto; padding: 10px 22px; border-top: 1px solid #263657; background: #10182a; }
