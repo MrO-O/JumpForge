@@ -127,6 +127,16 @@ npm run preview
 - 修改核心逻辑后运行 `npm run build`。
 - 涉及 runtime 的修改，应说明手动测试步骤。
 
+## Git Workflow
+
+- 开始任务前先运行 `git status`；如果工作区不干净，先报告，不要覆盖或删除用户改动。
+- 简单、独立的工作可在当前分支处理；复杂任务应从干净的 `main` 创建独立短生命周期分支。
+- 高风险物理、碰撞、schema 或 runtime 重构必须使用 `experiment/*` 分支；未验收实验不得合并或部署到 `main`。
+- 修改后运行 `npm run build`，并在每次输出中包含当前 `git status` 摘要和建议提交信息。
+- 除非用户明确要求，不要自动提交或推送。
+- 除非用户明确要求且理解风险，不要使用 `git reset --hard` 或 `git push --force`。
+- 完整分支命名、合并、提交和回滚流程见 `docs/git-workflow.md`。
+
 ## Documentation Rules
 
 - 改变功能边界时更新 README。
