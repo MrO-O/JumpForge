@@ -60,6 +60,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .palette-tile.locked { color: #8292ac; background: #151d2e; }
 .palette-tile small { color: #fbbf24; font-size: .62rem; }
 .palette-glyph { font-size: 1.25rem; line-height: 1; }
+.palette-glyph.solid-glyph { font-size: 1.8rem; }
 .editor-center { min-width: 0; min-height: 0; display: flex; flex-direction: column; background: #0b1020; }
 .grid-editor { min-height: 0; flex: 1; padding: 22px; display: flex; flex-direction: column; gap: 12px; }
 .grid-scroller { flex: 1; min-height: 260px; overflow: auto; padding: 14px; border: 1px solid #263657; border-radius: 10px; background: #070b15; }
@@ -68,9 +69,10 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .grid-tile-visual { position: absolute; display: grid; place-items: center; color: #fff; line-height: 1; }
 .grid-brush-preview { position: absolute; z-index: 2; opacity: .45; outline: 1px dashed #e0f2fe; pointer-events: none; }
 .grid-brush-preview.is-eraser { inset: 3px; background: repeating-linear-gradient(135deg, rgb(248 113 113 / .35) 0 4px, transparent 4px 8px); border: 1px dashed #fca5a5; }
-.half-block-icon { position: relative; width: 24px; height: 24px; border: 1px solid #94a3b8; border-radius: 0; overflow: hidden; }
-.half-block-icon i { position: absolute; display: block; background: #475569; }
-.half-block-icon.halfBlockTop i { inset: 0 0 50% 0; }.half-block-icon.halfBlockBottom i { inset: 50% 0 0 0; }.half-block-icon.halfBlockLeft i { inset: 0 50% 0 0; }.half-block-icon.halfBlockRight i { inset: 0 0 0 50%; }
+.half-block-icon { position: relative; width: 24px; height: 24px; }
+.half-block-icon i { position: absolute; display: block; width: 10px; height: 10px; background: #64748b; }
+.half-block-icon i:first-child { top: 2px; left: 2px; }
+.half-block-icon i:last-child { right: 3px; bottom: 3px; }
 .grid-cell:hover { outline: 2px solid #f8fafc; outline-offset: -2px; filter: brightness(1.16); z-index: 1; }
 .grid-help, .editor-status { margin: 0; color: #8ca0c4; font-size: .82rem; }
 .editor-status { flex: 0 0 auto; padding: 10px 22px; border-top: 1px solid #263657; background: #10182a; }

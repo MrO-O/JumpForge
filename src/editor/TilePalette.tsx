@@ -1,4 +1,4 @@
-import { isTileAllowedForAbilities, listTilesByCategory } from '../tiles/tileRegistry';
+import { getTileDefinition, isTileAllowedForAbilities, listTilesByCategory } from '../tiles/tileRegistry';
 import type { TileId } from '../tiles/tileTypes';
 import type { LevelDocument } from '../levels/levelTypes';
 
@@ -21,6 +21,7 @@ export function TilePalette({ level, selectedTileId, onSelect, onNotice }: TileP
   const groups = listTilesByCategory();
   const halfVariants: TileId[] = ['halfBlockTop', 'halfBlockBottom', 'halfBlockLeft', 'halfBlockRight'];
   const activeHalf = halfVariants.includes(selectedTileId) ? selectedTileId : 'halfBlockTop';
+  const halfDirection = getTileDefinition(activeHalf)?.editor.label ?? '上';
   return (
     <aside className="tile-palette" aria-label="Tile palette">
       <div className="panel-title-row"><h2>Tile palette</h2><span>左键绘制</span></div>
@@ -28,7 +29,7 @@ export function TilePalette({ level, selectedTileId, onSelect, onNotice }: TileP
         <section className="palette-group" key={category}>
           <h3>{categoryLabels[category as keyof typeof categoryLabels]}</h3>
           <div className="palette-tiles">
-            {category === 'terrain' && <button className={`palette-tile${halfVariants.includes(selectedTileId) ? ' selected' : ''}`} type="button" onClick={() => onSelect(activeHalf)}><span className={`half-block-icon ${activeHalf}`}><i /></span><span>Half Block: {activeHalf.replace('halfBlock', '')}</span></button>}
+            {category === 'terrain' && <button className={`palette-tile${halfVariants.includes(selectedTileId) ? ' selected' : ''}`} type="button" onClick={() => onSelect(activeHalf)}><span className="half-block-icon" aria-hidden="true"><i /><i /></span><span>半块：{halfDirection}</span></button>}
             {tiles.filter((tile) => !halfVariants.includes(tile.id)).map((tile) => {
               const allowed = isTileAllowedForAbilities(tile.id, level.enabledAbilities);
               const selected = tile.id === selectedTileId;
@@ -42,7 +43,7 @@ export function TilePalette({ level, selectedTileId, onSelect, onNotice }: TileP
                   onClick={() => allowed ? onSelect(tile.id) : onNotice(`${tile.name} 需要先启用 ${required}。`)}
                   aria-pressed={selected}
                 >
-                  <span className="palette-glyph" style={{ color: tile.editor.color }}>{tile.editor.glyph}</span>
+                  <span className={`palette-glyph${tile.id === 'solid' ? ' solid-glyph' : ''}`} style={{ color: tile.editor.color }}>{tile.editor.glyph}</span>
                   <span>{tile.id === 'empty' ? '橡皮擦' : tile.editor.label}</span>
                   {!allowed && <small>锁定</small>}
                 </button>
