@@ -125,11 +125,33 @@ const tileBuildHandlers: Partial<Record<RuntimeTileKind, TileBuildHandler>> = {
   staminaRefill: (context) => { context.entity.trigger = createPhysicalTile(context, context.result.staminaRefills); },
   checkpoint: (context) => { context.entity.trigger = createPhysicalTile(context, context.result.checkpoints); },
   crumbleBlock: (context) => { context.entity.collider = createPhysicalTile(context, context.result.crumbleBlocks); },
-  halfBlockTop: (context) => { context.entity.collider = createPhysicalTile(context, context.result.partialSolids); },
-  halfBlockBottom: (context) => { context.entity.collider = createPhysicalTile(context, context.result.partialSolids); },
-  halfBlockLeft: (context) => { context.entity.collider = createPhysicalTile(context, context.result.partialSolids); },
-  halfBlockRight: (context) => { context.entity.collider = createPhysicalTile(context, context.result.partialSolids); },
 };
+
+function buildMergedPartialColliders(scene: Phaser.Scene, result: RuntimeLevelBuildResult): void {
+  type Rect = { x: number; y: number; width: number; height: number; entities: RuntimeTileEntity[] };
+  let rects: Rect[] = Array.from(result.entitiesByCell.values()).flatMap((entity) => {
+    if (!entity.collisionBox) return [];
+    const box = entity.collisionBox;
+    return [{ x: (entity.cellX + box.x) * result.tileSize, y: (entity.cellY + box.y) * result.tileSize, width: box.width * result.tileSize, height: box.height * result.tileSize, entities: [entity] }];
+  });
+  let merged = true;
+  while (merged) {
+    merged = false;
+    outer: for (let i = 0; i < rects.length; i += 1) for (let j = i + 1; j < rects.length; j += 1) {
+      const a = rects[i]; const b = rects[j];
+      const vertical = a.x === b.x && a.width === b.width && (a.y + a.height === b.y || b.y + b.height === a.y);
+      const horizontal = a.y === b.y && a.height === b.height && (a.x + a.width === b.x || b.x + b.width === a.x);
+      if (!vertical && !horizontal) continue;
+      const next: Rect = vertical ? { x: a.x, y: Math.min(a.y, b.y), width: a.width, height: a.height + b.height, entities: [...a.entities, ...b.entities] } : { x: Math.min(a.x, b.x), y: a.y, width: a.width + b.width, height: a.height, entities: [...a.entities, ...b.entities] };
+      rects = rects.filter((_, index) => index !== i && index !== j); rects.push(next); merged = true; break outer;
+    }
+  }
+  for (const rect of rects) {
+    const collider = scene.add.rectangle(rect.x + rect.width / 2, rect.y + rect.height / 2, rect.width, rect.height, 0x000000, 0).setVisible(false);
+    scene.physics.add.existing(collider, true); result.partialSolids.add(collider);
+    for (const entity of rect.entities) entity.collider = collider;
+  }
+}
 
 /** Builds registry-driven visuals and physics primitives; behavior is bound by tileRuntimeHandlers. */
 export function buildRuntimeLevel(scene: Phaser.Scene, level: LevelDocument): RuntimeLevelBuildResult {
@@ -195,5 +217,6 @@ export function buildRuntimeLevel(scene: Phaser.Scene, level: LevelDocument): Ru
       createDashBlockCluster(scene, result, cluster, level.tileSize);
     }
   }
+  buildMergedPartialColliders(scene, result);
   return result;
 }

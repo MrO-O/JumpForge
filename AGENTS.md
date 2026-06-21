@@ -72,6 +72,7 @@ npm run preview
 - Checkpoint tiles are non-unique runtime triggers. Death keeps the active checkpoint while a full test restart clears it and returns to the initial spawn.
 - Crumble blocks use centralized runtime handlers; do not put their timers or collision toggles in `TestScene`.
 - Small tile variants use registry-local collision/visual boxes; do not change global tileSize or introduce an object layer.
+- Half-block palette grouping is UI-only; merge partial colliders by actual rectangles, not grid-cell occupancy.
 
 ## Ability System Rules
 

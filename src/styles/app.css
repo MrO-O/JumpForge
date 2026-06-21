@@ -66,6 +66,8 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .level-grid { display: grid; width: max-content; border-top: 1px solid #31415f; border-left: 1px solid #31415f; user-select: none; touch-action: none; }
 .grid-cell { position: relative; width: 32px; height: 32px; min-width: 0; padding: 0; display: block; color: #fff; font-size: 16px; font-weight: 700; border: 0; border-right: 1px solid rgb(7 11 21 / .42); border-bottom: 1px solid rgb(7 11 21 / .42); border-radius: 0; overflow: hidden; }
 .grid-tile-visual { position: absolute; display: grid; place-items: center; color: #fff; line-height: 1; }
+.grid-brush-preview { position: absolute; z-index: 2; opacity: .45; outline: 1px dashed #e0f2fe; pointer-events: none; }
+.grid-brush-preview.is-eraser { inset: 3px; background: repeating-linear-gradient(135deg, rgb(248 113 113 / .35) 0 4px, transparent 4px 8px); border: 1px dashed #fca5a5; }
 .grid-cell:hover { outline: 2px solid #f8fafc; outline-offset: -2px; filter: brightness(1.16); z-index: 1; }
 .grid-help, .editor-status { margin: 0; color: #8ca0c4; font-size: .82rem; }
 .editor-status { flex: 0 0 auto; padding: 10px 22px; border-top: 1px solid #263657; background: #10182a; }

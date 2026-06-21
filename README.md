@@ -93,6 +93,8 @@ Death and the configured restart key restore every crumble block, including any 
 
 `halfBlockTop`, `halfBlockBottom`, `halfBlockLeft`, and `halfBlockRight` remain normal grid tile IDs. Their registry-local `collisionBox` and `visualBox` make their collider and editor visual occupy a half-cell without changing `tileSize` or LevelDocument. Partial blocks use individual colliders and do not join the full-cell solid merge; they are not a free-size object system.
 
+The palette presents these IDs as one Half Block brush. Space cycles direction and Shift+Space cycles backward; the grid shows a ghost preview. Partial colliders merge only when their actual world rectangles touch, reducing seams without becoming an object layer.
+
 ## 部署到 GitHub Pages
 
 1. 在 GitHub 创建仓库并将代码推送到 `main` 分支。

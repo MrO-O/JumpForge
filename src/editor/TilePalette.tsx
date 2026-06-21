@@ -19,6 +19,8 @@ interface TilePaletteProps {
 
 export function TilePalette({ level, selectedTileId, onSelect, onNotice }: TilePaletteProps) {
   const groups = listTilesByCategory();
+  const halfVariants: TileId[] = ['halfBlockTop', 'halfBlockBottom', 'halfBlockLeft', 'halfBlockRight'];
+  const activeHalf = halfVariants.includes(selectedTileId) ? selectedTileId : 'halfBlockTop';
   return (
     <aside className="tile-palette" aria-label="Tile palette">
       <div className="panel-title-row"><h2>Tile palette</h2><span>左键绘制</span></div>
@@ -26,7 +28,8 @@ export function TilePalette({ level, selectedTileId, onSelect, onNotice }: TileP
         <section className="palette-group" key={category}>
           <h3>{categoryLabels[category as keyof typeof categoryLabels]}</h3>
           <div className="palette-tiles">
-            {tiles.map((tile) => {
+            {category === 'terrain' && <button className={`palette-tile${halfVariants.includes(selectedTileId) ? ' selected' : ''}`} type="button" onClick={() => onSelect(activeHalf)}><span className="palette-glyph" style={{ color: '#475569' }}>◐</span><span>Half Block: {activeHalf.replace('halfBlock', '')}</span></button>}
+            {tiles.filter((tile) => !halfVariants.includes(tile.id)).map((tile) => {
               const allowed = isTileAllowedForAbilities(tile.id, level.enabledAbilities);
               const selected = tile.id === selectedTileId;
               const required = tile.requiredAbilities?.join(', ');

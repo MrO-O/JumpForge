@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { exportLevelToJson } from '../storage/importExport';
 import { placeTileAt, validateLevel } from '../levels/levelCommands';
 import type { LevelDocument } from '../levels/levelTypes';
@@ -30,6 +30,19 @@ export function EditorWorkspace({ level, onChange, onSave, onTest, onBack, onNot
   const [selectedTileId, setSelectedTileId] = useState<TileId>('solid');
   const [hoverCell, setHoverCell] = useState<{ x: number; y: number } | null>(null);
   const validation = useMemo(() => validateLevel(level), [level]);
+  const halfVariants: TileId[] = ['halfBlockTop', 'halfBlockBottom', 'halfBlockLeft', 'halfBlockRight'];
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (event.code !== 'Space' || !halfVariants.includes(selectedTileId) || target?.matches('input, textarea, select, [contenteditable="true"]')) return;
+      event.preventDefault();
+      const index = halfVariants.indexOf(selectedTileId);
+      const direction = event.shiftKey ? -1 : 1;
+      setSelectedTileId(halfVariants[(index + direction + halfVariants.length) % halfVariants.length]);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [selectedTileId]);
 
   const exportCurrent = () => {
     try {

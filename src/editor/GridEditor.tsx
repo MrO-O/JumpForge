@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { getTileDefinition } from '../tiles/tileRegistry';
 import type { TileId } from '../tiles/tileTypes';
 import type { LevelDocument } from '../levels/levelTypes';
@@ -12,6 +12,7 @@ interface GridEditorProps {
 
 export function GridEditor({ level, selectedTileId, onPaint, onHover }: GridEditorProps) {
   const paintingTile = useRef<TileId | null>(null);
+  const [hoverCell, setHoverCell] = useState<{ x: number; y: number } | null>(null);
   const terrain = level.layers[0];
 
   useEffect(() => {
@@ -34,6 +35,8 @@ export function GridEditor({ level, selectedTileId, onPaint, onHover }: GridEdit
             const y = Math.floor(index / level.width);
             const tile = getTileDefinition(tileId);
             const visualBox = tile?.visualBox ?? tile?.collisionBox;
+            const previewTile = getTileDefinition(selectedTileId);
+            const previewBox = previewTile?.visualBox ?? previewTile?.collisionBox;
             return (
               <button
                 className="grid-cell"
@@ -48,12 +51,14 @@ export function GridEditor({ level, selectedTileId, onPaint, onHover }: GridEdit
                   paint(x, y, paintTile);
                 }}
                 onPointerEnter={() => {
+                  setHoverCell({ x, y });
                   onHover(x, y);
                   if (paintingTile.current) paint(x, y, paintingTile.current);
                 }}
-                onPointerLeave={() => onHover(x, y)}
+                onPointerLeave={() => { setHoverCell(null); onHover(x, y); }}
               >
                 <span className="grid-tile-visual" style={{ backgroundColor: tile?.editor.color ?? '#7f1d1d', left: `${(visualBox?.x ?? 0) * 100}%`, top: `${(visualBox?.y ?? 0) * 100}%`, width: `${(visualBox?.width ?? 1) * 100}%`, height: `${(visualBox?.height ?? 1) * 100}%` }}>{tile?.editor.glyph ?? '?'}</span>
+                {hoverCell?.x === x && hoverCell?.y === y && <span className={`grid-brush-preview${selectedTileId === 'empty' ? ' is-eraser' : ''}`} style={selectedTileId === 'empty' ? undefined : { backgroundColor: previewTile?.editor.color, left: `${(previewBox?.x ?? 0) * 100}%`, top: `${(previewBox?.y ?? 0) * 100}%`, width: `${(previewBox?.width ?? 1) * 100}%`, height: `${(previewBox?.height ?? 1) * 100}%` }} />}
               </button>
             );
           })}
