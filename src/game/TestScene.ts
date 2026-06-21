@@ -14,6 +14,7 @@ export interface TestRuntimeStatus {
   dashStatus: 'Disabled' | 'Ready' | 'Used' | 'Dashing';
   wallStatus: '—' | 'SLIDE' | 'CLIMB';
   stamina: string;
+  checkpointStatus: 'None' | 'Active';
   keyCount: number;
   switchDoorsOpen: boolean;
   elapsedSeconds: number;
@@ -67,6 +68,8 @@ export class TestScene extends Phaser.Scene {
     this.physics.world.setBounds(0, 0, worldWidth, this.worldHeight, true, true, true, false);
     this.builtLevel = buildRuntimeLevel(this, level);
     this.state.spawnPosition = this.builtLevel.spawnPosition;
+    this.state.initialSpawnPosition = this.builtLevel.spawnPosition ? { ...this.builtLevel.spawnPosition } : null;
+    this.state.activeRespawnPosition = this.builtLevel.spawnPosition ? { ...this.builtLevel.spawnPosition } : null;
     this.events.once('shutdown', this.shutdown, this);
     this.scale.on('resize', this.updateCameraViewport, this);
     this.updateCameraViewport();
@@ -128,9 +131,10 @@ export class TestScene extends Phaser.Scene {
 
   private killPlayer(message: string): void {
     if (this.state.isDead || this.state.isComplete || !this.player || !this.controller) return;
-    resetRuntimeAttempt(this.state, `${message} Respawning…`, this.dashEnabled);
+    const source = this.state.activeCheckpointCell ? 'checkpoint' : 'initial spawn';
+    resetRuntimeAttempt(this.state, `${message} Respawning from ${source}…`, this.dashEnabled, true);
     this.state.isDead = true;
-    this.tileRuntime?.resetForAttempt();
+    this.tileRuntime?.resetForAttempt(true);
     this.player.setFillStyle(0xef4444);
     this.controller.setEnabled(false);
     this.respawnEvent = this.time.delayedCall(this.controller.tuning.respawnDelayMs, () => this.respawnPlayer());
@@ -138,10 +142,11 @@ export class TestScene extends Phaser.Scene {
   }
 
   private respawnPlayer(): void {
-    if (!this.player || !this.controller || !this.state.spawnPosition) return;
+    const respawnPosition = this.state.activeRespawnPosition ?? this.state.spawnPosition;
+    if (!this.player || !this.controller || !respawnPosition) return;
     this.player.setFillStyle(0x60a5fa);
-    this.player.setPosition(this.state.spawnPosition.x, this.state.spawnPosition.y);
-    this.player.body.reset(this.state.spawnPosition.x, this.state.spawnPosition.y);
+    this.player.setPosition(respawnPosition.x, respawnPosition.y);
+    this.player.body.reset(respawnPosition.x, respawnPosition.y);
     this.controller.reset();
     this.state.isDead = false;
     this.state.currentMessage = 'Respawned. Mechanisms reset.';
@@ -158,7 +163,7 @@ export class TestScene extends Phaser.Scene {
   }
 
   private restartLevel(): void {
-    const spawnPosition = this.state.spawnPosition;
+    const spawnPosition = this.state.initialSpawnPosition ?? this.state.spawnPosition;
     if (!this.player || !this.controller || !spawnPosition) return;
     this.respawnEvent?.remove(false);
     const nextRestartCount = this.state.restartCount + 1;
@@ -184,6 +189,7 @@ export class TestScene extends Phaser.Scene {
       dashStatus: this.controller?.dashStatus ?? 'Disabled',
       wallStatus,
       stamina: this.controller?.wallClimbEnabled ? `${Math.ceil(this.state.currentStamina)}/${Math.round(this.controller.tuning.maxStamina)}` : '—',
+      checkpointStatus: this.state.activeCheckpointCell ? 'Active' : 'None',
       keyCount: this.state.keyCount,
       switchDoorsOpen: this.state.switchDoorsOpen,
       elapsedSeconds: Math.floor(this.state.elapsedMs / 1000),

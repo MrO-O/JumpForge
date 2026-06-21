@@ -2,7 +2,7 @@
 
 JumpForge 是浏览器端 2D 平台跳跃关卡设计工具。它以地图编辑器、可扩展 tile 机制和可选动作能力为核心，用于实验动作挑战与解谜关卡。
 
-当前完成 **Phase 5B：Wall Movement Ability + Climb Stamina**。编辑器始终是本地优先的工作台；测试模式只使用关卡深拷贝快照，所有运行中状态都不会修改编辑器地图或 localStorage。
+当前完成 **Phase 6A：Checkpoint / Respawn System**。编辑器始终是本地优先的工作台；测试模式只使用关卡深拷贝快照，所有运行中状态都不会修改编辑器地图或 localStorage。
 
 ## 运行
 
@@ -76,6 +76,12 @@ Default controls are:
 Each physical key can belong to only one action. While recording a binding, modifier combinations, `Tab`, and `F5` are rejected; clear the existing binding first when a key is already in use. The test toolbar always has a return button, so changing the exit binding cannot trap a test session.
 
 Controls are stored as a global browser preference in localStorage under `jumpforge:keybindings:v1`. They are not part of `LevelDocument`, do not appear in exported level JSON, and importing a level never changes them. GitHub Pages and local development use different browser origins, so their controls (like their local levels) are stored independently.
+
+## Checkpoints
+
+`checkpoint` is a reusable interaction tile that records a respawn point for the current Phaser test only. Touching it makes it visibly active and updates the test sidebar. On death from spikes or falling out of the level, JumpForge restores the usual per-life mechanism state (keys, doors, switches, crystals, dash blocks, and stamina refills) but respawns the player at the latest checkpoint. Pressing the configured restart key performs a full test restart instead: it clears checkpoint progress and returns to the initial `spawn`.
+
+Checkpoint tiles are exported as ordinary level tiles, so shared JSON retains their placement. Their activated state and any runtime respawn position are never saved to `LevelDocument` or exported JSON. Place checkpoints near safe ground with clear headroom; the v1 respawn point is the checkpoint center slightly above the tile.
 
 ## 部署到 GitHub Pages
 

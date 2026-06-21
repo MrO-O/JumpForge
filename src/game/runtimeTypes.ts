@@ -19,6 +19,10 @@ export interface RuntimeLevelState {
   isDead: boolean;
   isComplete: boolean;
   spawnPosition: RuntimePosition | null;
+  initialSpawnPosition: RuntimePosition | null;
+  activeRespawnPosition: RuntimePosition | null;
+  activeCheckpointCell: RuntimeCellKey | null;
+  activatedCheckpointCells: Set<RuntimeCellKey>;
   currentMessage: string;
   restartCount: number;
   elapsedMs: number;
@@ -47,6 +51,10 @@ export const createRuntimeLevelState = (dashEnabled = false): RuntimeLevelState 
   isDead: false,
   isComplete: false,
   spawnPosition: null,
+  initialSpawnPosition: null,
+  activeRespawnPosition: null,
+  activeCheckpointCell: null,
+  activatedCheckpointCells: new Set(),
   currentMessage: '',
   restartCount: 0,
   elapsedMs: 0,
@@ -71,8 +79,13 @@ export const createRuntimeLevelState = (dashEnabled = false): RuntimeLevelState 
   consumedStaminaRefillCells: new Set(),
 });
 
-/** Restore all mechanic progress to the start of the current test attempt. */
-export function resetRuntimeAttempt(state: RuntimeLevelState, message: string, dashEnabled = false): void {
+/** Restore per-life mechanic progress; a death may retain an already activated checkpoint. */
+export function resetRuntimeAttempt(
+  state: RuntimeLevelState,
+  message: string,
+  dashEnabled = false,
+  preserveCheckpoint = false,
+): void {
   state.isDead = false;
   state.isComplete = false;
   state.elapsedMs = 0;
@@ -95,5 +108,10 @@ export function resetRuntimeAttempt(state: RuntimeLevelState, message: string, d
   state.isClimbing = false;
   state.wallSide = null;
   state.consumedStaminaRefillCells.clear();
+  if (!preserveCheckpoint) {
+    state.activeCheckpointCell = null;
+    state.activatedCheckpointCells.clear();
+    state.activeRespawnPosition = state.initialSpawnPosition ? { ...state.initialSpawnPosition } : null;
+  }
   state.currentMessage = message;
 }

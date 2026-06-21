@@ -33,6 +33,13 @@ function setVisible(entity: RuntimeTileEntity, visible: boolean): void {
   entity.glyph.setVisible(visible);
 }
 
+function setCheckpointAppearance(entity: RuntimeTileEntity, active: boolean): void {
+  entity.visual.setFillStyle(active ? 0xef4444 : entity.color);
+  entity.visual.setAlpha(active ? 1 : 0.82);
+  entity.glyph.setText('⚑');
+  entity.glyph.setAlpha(1);
+}
+
 function setClusterColliderEnabled(cluster: DashBlockCluster, enabled: boolean): void {
   const body = cluster.collider.body as Phaser.Physics.Arcade.StaticBody | undefined;
   if (!body) return;
@@ -68,9 +75,10 @@ export class TileRuntimeController {
     this.scene.physics.add.overlap(this.player, this.level.switches, (_player, switchTile) => this.handleSwitch(switchTile));
     this.scene.physics.add.overlap(this.player, this.level.dashCrystals, (_player, crystal) => this.handleDashCrystal(crystal));
     this.scene.physics.add.overlap(this.player, this.level.staminaRefills, (_player, refill) => this.handleStaminaRefill(refill));
+    this.scene.physics.add.overlap(this.player, this.level.checkpoints, (_player, checkpoint) => this.handleCheckpoint(checkpoint));
   }
 
-  resetForAttempt(): void {
+  resetForAttempt(preserveCheckpoint = false): void {
     this.switchCooldowns.clear();
     this.lastDoorPromptAt = Number.NEGATIVE_INFINITY;
     for (const entity of this.level.entitiesByCell.values()) {
@@ -99,6 +107,9 @@ export class TileRuntimeController {
         case 'staminaRefill':
           setVisible(entity, true);
           this.setTriggerEnabled(entity, true);
+          break;
+        case 'checkpoint':
+          setCheckpointAppearance(entity, preserveCheckpoint && entity.cellKey === this.state.activeCheckpointCell);
           break;
         default:
           break;
@@ -163,6 +174,21 @@ export class TileRuntimeController {
     setVisible(entity, false);
     this.setTriggerEnabled(entity, false);
     this.callbacks.onMessage('Stamina refilled.');
+  }
+
+  private handleCheckpoint(object: unknown): void {
+    const entity = getEntity(this.level, object);
+    if (!entity || this.state.activeCheckpointCell === entity.cellKey) return;
+    this.state.activeCheckpointCell = entity.cellKey;
+    this.state.activatedCheckpointCells.add(entity.cellKey);
+    this.state.activeRespawnPosition = {
+      x: entity.x,
+      y: entity.y - this.level.tileSize * 0.15,
+    };
+    for (const candidate of this.level.entitiesByCell.values()) {
+      if (candidate.kind === 'checkpoint') setCheckpointAppearance(candidate, candidate.cellKey === entity.cellKey);
+    }
+    this.callbacks.onMessage('Checkpoint reached.');
   }
 
   private handleLockedDoor(object: unknown): void {

@@ -31,7 +31,7 @@ export function TestingWorkspace({ level, onExit, onComplete }: TestingWorkspace
             <div><dt>Jump</dt><dd>{formatKeyBinding(keybindings.jump)} / {formatKeyBinding(keybindings.moveUp)}</dd></div>
             <div><dt>Dash</dt><dd>{formatKeyBinding(keybindings.dash)}</dd></div>
             <div><dt>Grab / climb</dt><dd>{formatKeyBinding(keybindings.grab)}</dd></div>
-            <div><dt>Restart</dt><dd>{formatKeyBinding(keybindings.restart)}</dd></div>
+            <div><dt>Restart initial</dt><dd>{formatKeyBinding(keybindings.restart)}</dd></div>
             <div><dt>Return</dt><dd>{formatKeyBinding(keybindings.exitTest)}</dd></div>
           </dl>
         </section>
@@ -44,6 +44,7 @@ export function TestingWorkspace({ level, onExit, onComplete }: TestingWorkspace
               <div><dt>Dash</dt><dd>{status.dashStatus}</dd></div>
               <div><dt>Wall</dt><dd>{status.wallStatus}</dd></div>
               <div><dt>Stamina</dt><dd>{status.stamina}</dd></div>
+              <div><dt>Checkpoint</dt><dd>{status.checkpointStatus}</dd></div>
               <div><dt>Keys</dt><dd>{status.keyCount}</dd></div>
               <div><dt>Switch doors</dt><dd>{status.switchDoorsOpen ? 'OPEN' : 'CLOSED'}</dd></div>
               <div><dt>Time</dt><dd>{status.elapsedSeconds}s</dd></div>

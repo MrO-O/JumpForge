@@ -20,6 +20,7 @@ export const tileRegistry: TileRegistry = {
   dashBlock: defineTile({ id: 'dashBlock', name: '冲刺破坏块', category: 'ability', collision: 'solid', hazardous: false, interactive: true, requiredAbilities: ['dash'], tags: ['dash', 'breakable'], editor: { color: '#8b5cf6', glyph: '▧', label: '冲刺破坏块', paletteOrder: 120 }, runtime: { kind: 'dashBlock' } }),
   climbWall: defineTile({ id: 'climbWall', name: '可攀墙面', category: 'ability', collision: 'solid', hazardous: false, interactive: true, requiredAbilities: ['wallClimb'], tags: ['wall', 'climb', 'ability'], editor: { color: '#0f766e', glyph: '╫', label: '可攀墙面', paletteOrder: 130 }, runtime: { kind: 'climbWall' } }),
   staminaRefill: defineTile({ id: 'staminaRefill', name: '体力补给', category: 'ability', collision: 'none', hazardous: false, interactive: true, requiredAbilities: ['wallClimb'], tags: ['stamina', 'refill', 'ability'], editor: { color: '#34d399', glyph: '✦', label: '体力补给', paletteOrder: 140 }, runtime: { kind: 'staminaRefill' } }),
+  checkpoint: defineTile({ id: 'checkpoint', name: '检查点', category: 'interaction', collision: 'none', hazardous: false, interactive: true, tags: ['checkpoint', 'respawn'], editor: { color: '#f97316', glyph: '⚑', label: '检查点', paletteOrder: 145 }, runtime: { kind: 'checkpoint' } }),
 };
 
 export function getTileDefinition(tileId: string): TileDefinition | undefined {

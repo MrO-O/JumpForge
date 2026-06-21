@@ -35,4 +35,13 @@ const wallTrainingLevel = paint(
   ],
 );
 
-export const sampleLevels: readonly LevelDocument[] = [basicJumpLevel, keyDoorLevel, dashLevel, wallTrainingLevel];
+const checkpointTrialLevel = paint(
+  createEmptyLevel({ id: 'sample-checkpoint-trial', title: 'Checkpoint Trial', author: 'JumpForge', width: 18, height: 10 }),
+  [
+    [7, 8, 'checkpoint'],
+    [10, 9, 'empty'], [11, 9, 'empty'],
+    [14, 8, 'spike'],
+  ],
+);
+
+export const sampleLevels: readonly LevelDocument[] = [basicJumpLevel, keyDoorLevel, dashLevel, wallTrainingLevel, checkpointTrialLevel];
