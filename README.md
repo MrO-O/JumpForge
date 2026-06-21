@@ -95,6 +95,8 @@ Death and the configured restart key restore every crumble block, including any 
 
 The palette presents these IDs as one Half Block brush. Space cycles direction and Shift+Space cycles backward; the grid shows a ghost preview. Partial colliders merge only when their actual world rectangles touch, reducing seams without becoming an object layer.
 
+Half blocks are suitable for basic platform geometry, but different directions in complex L- or T-shaped joins can still snag under Phaser Arcade Physics. Avoid using `halfBlockLeft` / `halfBlockRight` as long precision walls; prefer `solid` or `climbWall` where stable wall movement matters. A complete fix should be a separate controller-level task using kinematic AABB or swept collision, not further epsilon tweaks.
+
 ## 部署到 GitHub Pages
 
 1. 在 GitHub 创建仓库并将代码推送到 `main` 分支。

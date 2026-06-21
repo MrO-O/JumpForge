@@ -57,7 +57,7 @@ export function GridEditor({ level, selectedTileId, onPaint, onHover }: GridEdit
                 }}
                 onPointerLeave={() => { setHoverCell(null); onHover(x, y); }}
               >
-                <span className="grid-tile-visual" style={{ backgroundColor: tile?.editor.color ?? '#7f1d1d', left: `${(visualBox?.x ?? 0) * 100}%`, top: `${(visualBox?.y ?? 0) * 100}%`, width: `${(visualBox?.width ?? 1) * 100}%`, height: `${(visualBox?.height ?? 1) * 100}%` }}>{tile?.editor.glyph ?? '?'}</span>
+                {!(hoverCell?.x === x && hoverCell?.y === y) && <span className="grid-tile-visual" style={{ backgroundColor: tile?.editor.color ?? '#7f1d1d', left: `${(visualBox?.x ?? 0) * 100}%`, top: `${(visualBox?.y ?? 0) * 100}%`, width: `${(visualBox?.width ?? 1) * 100}%`, height: `${(visualBox?.height ?? 1) * 100}%` }}>{tile?.editor.glyph ?? '?'}</span>}
                 {hoverCell?.x === x && hoverCell?.y === y && <span className={`grid-brush-preview${selectedTileId === 'empty' ? ' is-eraser' : ''}`} style={selectedTileId === 'empty' ? undefined : { backgroundColor: previewTile?.editor.color, left: `${(previewBox?.x ?? 0) * 100}%`, top: `${(previewBox?.y ?? 0) * 100}%`, width: `${(previewBox?.width ?? 1) * 100}%`, height: `${(previewBox?.height ?? 1) * 100}%` }} />}
               </button>
             );
