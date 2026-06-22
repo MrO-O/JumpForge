@@ -30,7 +30,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .status { display: inline-block; padding: 3px 7px; font-size: .7rem; font-weight: 800; letter-spacing: .04em; border-radius: 999px; }
 .status.valid { color: #bbf7d0; background: #14532d; }
 .status.invalid { color: #fecaca; background: #7f1d1d; }
-.source-badge { color: #bfdbfe; background: #1e3a5f; padding: 3px 7px; border-radius: 999px; font-size: .75rem; }
+.source-badge { flex: 0 0 auto; white-space: nowrap; color: #bfdbfe; background: #1e3a5f; padding: 3px 7px; border-radius: 999px; font-size: .75rem; }
 .abilities { color: #c4b5fd; font-size: .87rem; margin: 8px 0; }
 .updated-at { margin: 0; color: #8393ae; font-size: .8rem; }
 .card-actions { margin-top: auto; padding-top: 16px; }
