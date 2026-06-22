@@ -70,9 +70,18 @@ const timedPlatformTrialLevel = paint(
   ],
 );
 
+const movingPlatformTrialLevel = paint(
+  createEmptyLevel({ id: 'sample-moving-platform-trial', title: 'Moving Platform Trial', author: 'JumpForge', width: 22, height: 10 }),
+  [
+    [5, 8, 'checkpoint'],
+    [7, 9, 'empty'], [8, 9, 'empty'], [9, 9, 'empty'], [10, 9, 'empty'], [11, 9, 'empty'], [12, 9, 'empty'], [13, 9, 'empty'],
+    [8, 8, 'movingPlatform'], [12, 8, 'movingPlatform'],
+  ],
+);
+
 const smallBlocksTrialLevel = paint(
   createEmptyLevel({ id: 'sample-small-blocks-trial', title: 'Small Blocks Trial', author: 'JumpForge', width: 18, height: 10 }),
   [[4, 8, 'halfBlockTop'], [6, 8, 'halfBlockBottom'], [9, 7, 'halfBlockLeft'], [11, 7, 'halfBlockRight']],
 );
 
-export const sampleLevels: readonly LevelDocument[] = [basicJumpLevel, keyDoorLevel, dashLevel, wallTrainingLevel, checkpointTrialLevel, crumbleTrialLevel, berryTrialLevel, timedPlatformTrialLevel, smallBlocksTrialLevel];
+export const sampleLevels: readonly LevelDocument[] = [basicJumpLevel, keyDoorLevel, dashLevel, wallTrainingLevel, checkpointTrialLevel, crumbleTrialLevel, berryTrialLevel, timedPlatformTrialLevel, movingPlatformTrialLevel, smallBlocksTrialLevel];

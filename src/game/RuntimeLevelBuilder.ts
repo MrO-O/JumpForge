@@ -26,6 +26,12 @@ export interface DashBlockCluster {
   collider: Phaser.GameObjects.Rectangle;
 }
 
+export interface MovingPlatformRuntime {
+  entity: RuntimeTileEntity;
+  initialPosition: RuntimePosition;
+  direction: 1 | -1;
+}
+
 export interface RuntimeLevelBuildResult {
   solids: Phaser.Physics.Arcade.StaticGroup;
   oneWayPlatforms: Phaser.Physics.Arcade.StaticGroup;
@@ -43,6 +49,7 @@ export interface RuntimeLevelBuildResult {
   checkpoints: Phaser.Physics.Arcade.StaticGroup;
   collectibleBerries: Phaser.Physics.Arcade.StaticGroup;
   timedPlatforms: Phaser.Physics.Arcade.StaticGroup;
+  movingPlatformBodies: Phaser.Physics.Arcade.Group;
   crumbleBlocks: Phaser.Physics.Arcade.StaticGroup;
   partialSolids: Phaser.Physics.Arcade.StaticGroup;
   spawnPosition: RuntimePosition | null;
@@ -52,6 +59,7 @@ export interface RuntimeLevelBuildResult {
   mergedStaticColliderCount: number;
   tileSize: number;
   collectibleTotal: number;
+  movingPlatforms: Map<RuntimeCellKey, MovingPlatformRuntime>;
   dashBlockClusters: Map<string, DashBlockCluster>;
   dashBlockClustersByCell: Map<RuntimeCellKey, DashBlockCluster>;
 }
@@ -109,6 +117,24 @@ function createDashBlockCluster(scene: Phaser.Scene, result: RuntimeLevelBuildRe
   for (const cellKey of cluster.cellKeys) result.dashBlockClustersByCell.set(cellKey, cluster);
 }
 
+function createMovingPlatform(context: TileBuildContext): void {
+  const platform = context.entity.visual;
+  platform.setData('runtimeCellKey', context.entity.cellKey);
+  context.scene.physics.add.existing(platform);
+  const body = platform.body as Phaser.Physics.Arcade.Body;
+  body.setAllowGravity(false);
+  body.setImmovable(true);
+  body.pushable = false;
+  body.setFriction(1, 0);
+  context.entity.collider = platform;
+  context.result.movingPlatformBodies.add(platform);
+  context.result.movingPlatforms.set(context.entity.cellKey, {
+    entity: context.entity,
+    initialPosition: { x: context.entity.x, y: context.entity.y },
+    direction: 1,
+  });
+}
+
 const tileBuildHandlers: Partial<Record<RuntimeTileKind, TileBuildHandler>> = {
   oneWayPlatform: (context) => { context.entity.collider = createPhysicalTile(context, context.result.oneWayPlatforms); },
   spike: (context) => { context.entity.trigger = createPhysicalTile(context, context.result.spikes); },
@@ -132,13 +158,14 @@ const tileBuildHandlers: Partial<Record<RuntimeTileKind, TileBuildHandler>> = {
     context.result.collectibleTotal += 1;
   },
   timedPlatform: (context) => { context.entity.collider = createPhysicalTile(context, context.result.timedPlatforms); },
+  movingPlatform: createMovingPlatform,
   crumbleBlock: (context) => { context.entity.collider = createPhysicalTile(context, context.result.crumbleBlocks); },
 };
 
 function buildMergedPartialColliders(scene: Phaser.Scene, result: RuntimeLevelBuildResult): void {
   type Rect = { x: number; y: number; width: number; height: number; entities: RuntimeTileEntity[] };
   let rects: Rect[] = Array.from(result.entitiesByCell.values()).flatMap((entity) => {
-    if (!entity.collisionBox) return [];
+    if (!entity.collisionBox || entity.kind === 'movingPlatform') return [];
     const box = entity.collisionBox;
     return [{ x: (entity.cellX + box.x) * result.tileSize, y: (entity.cellY + box.y) * result.tileSize, width: box.width * result.tileSize, height: box.height * result.tileSize, entities: [entity] }];
   });
@@ -180,6 +207,7 @@ export function buildRuntimeLevel(scene: Phaser.Scene, level: LevelDocument): Ru
     checkpoints: scene.physics.add.staticGroup(),
     collectibleBerries: scene.physics.add.staticGroup(),
     timedPlatforms: scene.physics.add.staticGroup(),
+    movingPlatformBodies: scene.physics.add.group(),
     crumbleBlocks: scene.physics.add.staticGroup(),
     partialSolids: scene.physics.add.staticGroup(),
     spawnPosition: null,
@@ -189,6 +217,7 @@ export function buildRuntimeLevel(scene: Phaser.Scene, level: LevelDocument): Ru
     mergedStaticColliderCount: 0,
     tileSize: level.tileSize,
     collectibleTotal: 0,
+    movingPlatforms: new Map(),
     dashBlockClusters: new Map(),
     dashBlockClustersByCell: new Map(),
   };

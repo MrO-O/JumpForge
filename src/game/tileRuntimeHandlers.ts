@@ -15,6 +15,12 @@ export const timedPlatformTiming = {
 const timedPlatformCycleMs = timedPlatformTiming.activeMs
   + timedPlatformTiming.inactiveMs;
 
+/** Shared horizontal motion for every moving platform in one test session. */
+export const movingPlatformTuning = {
+  speedPxPerSecond: 72,
+  travelTiles: 2,
+} as const;
+
 export interface TileRuntimeHandlerCallbacks {
   onDeath: (message: string) => void;
   onComplete: () => void;
@@ -87,6 +93,7 @@ export class TileRuntimeController {
     this.scene.physics.add.collider(this.player, this.level.dashBlocks, (_player, dashBlock) => this.handleDashBlock(dashBlock));
     this.scene.physics.add.collider(this.player, this.level.crumbleBlocks, (_player, crumbleBlock) => this.handleCrumbleBlock(crumbleBlock));
     this.scene.physics.add.collider(this.player, this.level.timedPlatforms);
+    this.scene.physics.add.collider(this.player, this.level.movingPlatformBodies);
     this.scene.physics.add.overlap(this.player, this.level.spikes, () => this.callbacks.onDeath('You touched spikes.'));
     this.scene.physics.add.overlap(this.player, this.level.goals, () => this.callbacks.onComplete());
     this.scene.physics.add.collider(this.player, this.level.springs, (_player, spring) => this.handleSpring(spring));
@@ -158,13 +165,16 @@ export class TileRuntimeController {
         if (entity) setVisible(entity, true);
       }
     }
+    this.resetMovingPlatforms();
     this.applyTimedPlatformPhase();
   }
 
   update(deltaMs: number): void {
-    if (this.level.timedPlatforms.getLength() === 0) return;
-    this.timedPlatformElapsedMs = (this.timedPlatformElapsedMs + deltaMs) % timedPlatformCycleMs;
-    this.applyTimedPlatformPhase();
+    if (this.level.timedPlatforms.getLength() > 0) {
+      this.timedPlatformElapsedMs = (this.timedPlatformElapsedMs + deltaMs) % timedPlatformCycleMs;
+      this.applyTimedPlatformPhase();
+    }
+    this.updateMovingPlatforms();
   }
 
   /** A small tile-neighbour probe is more reliable than Arcade side flags for wall abilities. */
@@ -302,6 +312,41 @@ export class TileRuntimeController {
       entity.visual.setFillStyle(entity.color);
       entity.visual.setAlpha(1);
       entity.glyph.setAlpha(1);
+    }
+  }
+
+  private updateMovingPlatforms(): void {
+    const travelDistance = this.level.tileSize * movingPlatformTuning.travelTiles;
+    for (const platform of this.level.movingPlatforms.values()) {
+      const { entity, initialPosition } = platform;
+      const body = entity.collider?.body as Phaser.Physics.Arcade.Body | undefined;
+      if (!body) continue;
+      const minX = initialPosition.x - travelDistance;
+      const maxX = initialPosition.x + travelDistance;
+
+      if (platform.direction > 0 && entity.visual.x >= maxX) {
+        entity.visual.setPosition(maxX, initialPosition.y);
+        body.reset(maxX, initialPosition.y);
+        platform.direction = -1;
+      } else if (platform.direction < 0 && entity.visual.x <= minX) {
+        entity.visual.setPosition(minX, initialPosition.y);
+        body.reset(minX, initialPosition.y);
+        platform.direction = 1;
+      }
+
+      body.setVelocityX(platform.direction * movingPlatformTuning.speedPxPerSecond);
+      entity.glyph.setPosition(entity.visual.x, entity.visual.y);
+    }
+  }
+
+  private resetMovingPlatforms(): void {
+    for (const platform of this.level.movingPlatforms.values()) {
+      const { entity, initialPosition } = platform;
+      platform.direction = 1;
+      entity.visual.setPosition(initialPosition.x, initialPosition.y);
+      entity.glyph.setPosition(initialPosition.x, initialPosition.y);
+      const body = entity.collider?.body as Phaser.Physics.Arcade.Body | undefined;
+      body?.reset(initialPosition.x, initialPosition.y);
     }
   }
 
@@ -444,6 +489,7 @@ export class TileRuntimeController {
       || entity.kind === 'halfBlockBottom'
       || entity.kind === 'halfBlockLeft'
       || entity.kind === 'halfBlockRight'
-      || entity.kind === 'climbWall';
+      || entity.kind === 'climbWall'
+      || entity.kind === 'movingPlatform';
   }
 }

@@ -19,6 +19,7 @@ export type TileId =
   | 'checkpoint'
   | 'collectibleBerry'
   | 'timedPlatform'
+  | 'movingPlatform'
   | 'crumbleBlock'
   | 'halfBlockTop'
   | 'halfBlockBottom'

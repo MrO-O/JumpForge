@@ -2,7 +2,7 @@
 
 JumpForge 是浏览器端 2D 平台跳跃关卡设计工具。它以地图编辑器、可扩展 tile 机制和可选动作能力为核心，用于实验动作挑战与解谜关卡。
 
-当前完成 **Phase 7B：Timed Platform**。编辑器始终是本地优先的工作台；测试模式只使用关卡深拷贝快照，所有运行中状态都不会修改编辑器地图或 localStorage。
+当前完成 **Phase 7C：Moving Platform**。编辑器始终是本地优先的工作台；测试模式只使用关卡深拷贝快照，所有运行中状态都不会修改编辑器地图或 localStorage。
 
 ## 运行
 
@@ -34,6 +34,7 @@ npm run preview
 - HUD：显示 movement preset、dash 状态、钥匙数量、全局开关门状态、死亡/通关信息和重开次数。
 - 可选收集品：`collectibleBerry` 可在关卡中放置多个；它不影响终点、门或钥匙，只增加挑战与完成度统计。
 - 定时平台：`timedPlatform` 按全局固定节奏在可站立与不可碰撞之间切换，用于节奏跳跃和路线规划。
+- 移动平台：`movingPlatform` 是与下半块同规格的 32×16 平台，当前以固定全局参数水平往返移动。
 
 ## Wall Movement + Stamina
 
@@ -104,6 +105,12 @@ Berry progress belongs only to the Phaser runtime: it is never written to `Level
 `timedPlatform` is a solid platform only while active. Every timed platform in a test shares one global rhythm: 1200ms active, then 900ms inactive. Inactive platforms are faded and do not collide. When the inactive phase ends, each platform waits to become active until the player has left its own platform area, so it never appears inside the player.
 
 The timer is Phaser runtime-only and is never saved to `LevelDocument`, localStorage, or exported JSON. Death, checkpoint respawn, and the configured restart key reset the shared rhythm to active, keeping attempts predictable. Phase 7B does not support per-tile timing settings or moving platforms.
+
+## Moving platforms
+
+`movingPlatform` uses the same 32×16 bottom-half geometry as `halfBlockBottom`: its editor preview, runtime visual, and collider occupy only the lower half of its grid cell. It moves horizontally back and forth from its placement position with one shared speed and travel distance. Phaser Arcade Physics carries a player standing on top through the platform body's horizontal friction.
+
+Moving platform position and direction are Phaser runtime-only. Death, checkpoint respawn, the configured restart key, and a new test session restore every platform to its placed position and initial direction. Phase 7C supports neither per-tile speed, distance, or paths, nor moving-platform path editing or object layers.
 
 ## Small tile variants
 
