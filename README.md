@@ -11,6 +11,8 @@ npm install
 npm run dev
 ```
 
+在 Windows 上，也可以直接双击项目根目录的 `start-local.bat`。它会在首次运行时安装依赖，随后启动本地开发服务并自动打开浏览器；关闭弹出的终端窗口即可停止服务。需要预先安装 [Node.js](https://nodejs.org/)。
+
 生产构建与本地预览：
 
 ```bash
