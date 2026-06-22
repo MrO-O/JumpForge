@@ -16,7 +16,6 @@ interface PhaserGameHostProps {
 /** React owns the container lifecycle; Phaser owns only its isolated game state. */
 export function PhaserGameHost({ level, keybindings, onExit, onComplete, onStatusChange }: PhaserGameHostProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const snapshotRef = useRef<LevelDocument>(cloneLevel(level));
   const exitRef = useRef(onExit);
   const completeRef = useRef(onComplete);
   const statusRef = useRef(onStatusChange);
@@ -29,7 +28,7 @@ export function PhaserGameHost({ level, keybindings, onExit, onComplete, onStatu
     const container = containerRef.current;
     if (!container) return undefined;
     let disposed = false;
-    const snapshot = snapshotRef.current;
+    const snapshot = cloneLevel(level);
     const readContainerSize = () => ({
       width: Math.max(1, container.clientWidth),
       height: Math.max(1, container.clientHeight),
@@ -64,7 +63,7 @@ export function PhaserGameHost({ level, keybindings, onExit, onComplete, onStatu
       game.destroy(true);
       container.replaceChildren();
     };
-  }, []);
+  }, [keybindings, level]);
 
   return <div className="phaser-game-host" ref={containerRef} />;
 }

@@ -108,6 +108,7 @@ npm run preview
 - 不要把所有逻辑塞进 TestScene。
 - 运动参数集中在 tuning 对象中，不要散落魔法数字。
 - movementProfile 属于 LevelDocument；新增预设或调参字段时同步更新 tuning registry、校验、编辑器 UI、README 和相关设计文档。
+- Saved custom movement modes are a separate browser-local library (maximum five). Selecting one must copy its profile into LevelDocument so imports/exports remain self-contained; test-time editing and saving must never mutate the editor document.
 - wallSlide、wallJump、climb 与 stamina 参数属于 PlayerTuning；墙面识别与 staminaRefill 由 runtime builder / handler 集中维护，不要散落到 TestScene。
 - 不要宣称或尝试复刻任何商业游戏的具体手感。
 - Phaser mount/unmount 必须清理干净，避免重复 canvas 或幽灵碰撞体。

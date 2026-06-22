@@ -33,6 +33,17 @@ const tuningOverridesSchema = z.object({
   dashDurationMs: z.number().finite().optional(),
   dashEndSpeedRetention: z.number().finite().optional(),
   dashCooldownMs: z.number().finite().optional(),
+  wallSlideMaxSpeed: z.number().finite().optional(),
+  wallJumpHorizontalVelocity: z.number().finite().optional(),
+  wallJumpVerticalVelocity: z.number().finite().optional(),
+  wallJumpLockMs: z.number().finite().optional(),
+  maxStamina: z.number().finite().optional(),
+  climbUpSpeed: z.number().finite().optional(),
+  climbDownSpeed: z.number().finite().optional(),
+  climbStillCostPerSecond: z.number().finite().optional(),
+  climbUpCostPerSecond: z.number().finite().optional(),
+  climbStaminaRecoveryOnGround: z.number().finite().optional(),
+  exhaustedWallSlideSpeed: z.number().finite().optional(),
 }).strict();
 
 const movementProfileSchema = z.object({

@@ -31,7 +31,8 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .status.valid { color: #bbf7d0; background: #14532d; }
 .status.invalid { color: #fecaca; background: #7f1d1d; }
 .source-badge { flex: 0 0 auto; white-space: nowrap; color: #bfdbfe; background: #1e3a5f; padding: 3px 7px; border-radius: 999px; font-size: .75rem; }
-.abilities { color: #c4b5fd; font-size: .87rem; margin: 8px 0; }
+.level-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+.level-tag { color: #c4b5fd; background: #261f45; border: 1px solid #463773; border-radius: 999px; padding: 3px 7px; font-size: .72rem; font-weight: 700; }
 .updated-at { margin: 0; color: #8393ae; font-size: .8rem; }
 .card-actions { margin-top: auto; padding-top: 16px; }
 .secondary-button { color: #dce8f8; background: #24324d; }
@@ -140,6 +141,12 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .testing-key-list dt, .testing-status-list dt { color: #8ca0c4; font-size: .77rem; }
 .testing-key-list dd, .testing-status-list dd { margin: 0; color: #e5edf9; font-size: .8rem; font-weight: 650; text-align: right; overflow-wrap: anywhere; }
 .testing-runtime-message { margin: 14px 0 0; padding: 10px; color: #cfe6ff; background: #172943; border: 1px solid #284b72; border-radius: 8px; font-size: .8rem; line-height: 1.45; overflow-wrap: anywhere; }
+.testing-movement-current { margin: 0 0 12px; color: #c4b5fd; font-size: .82rem; font-weight: 700; }
+.testing-movement-panel > label { display: grid; gap: 5px; margin-top: 12px; color: #aec0dc; font-size: .78rem; }
+.testing-movement-panel select, .testing-movement-panel input { width: 100%; color: #e5edf9; background: #0b1020; border: 1px solid #344767; border-radius: 7px; padding: 7px; }
+.testing-tuning-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin: 12px 0; }
+.testing-tuning-grid label { display: grid; gap: 4px; color: #aec0dc; font-size: .72rem; }
+.testing-movement-panel > button { width: 100%; margin-top: 10px; }
 .testing-game-panel { flex: 1; min-width: 0; min-height: 0; height: 100%; position: relative; overflow: hidden; background: #080d18; }
 .phaser-game-host { width: 100%; height: 100%; }
 .phaser-game-host canvas { display: block; width: 100% !important; height: 100% !important; }

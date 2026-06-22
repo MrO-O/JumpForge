@@ -31,7 +31,7 @@ npm run preview
 - dash 规则：每次空中阶段可使用一次，落地恢复；dashCrystal 可在一次生命内补充一次；dashBlock 仅在 dash 接触时破坏。
 - wallJump：按跳跃键可从空中接触的实体墙面蹬墙跳；下落时会墙滑。它可按关卡启用。
 - wallClimb：仅在 `climbWall` 上按住 `C` 抓墙/攀爬并消耗体力；落地或接触 `staminaRefill` 会恢复体力。它可独立于 wallJump 启用。
-- Movement Tuning Profiles：每关可选 Balanced、Precision、Floaty、Heavy 或 Dash Focused 预设，并可为当前关卡自定义移动、跳跃、dash 与 spring 参数。
+- Movement Tuning Profiles：每关可选择 Balanced、Precision、Floaty、Heavy、Dash Focused 或已保存的自定义手感模式；手感与动作能力一起显示为关卡标签。
 - HUD：显示 movement preset、dash 状态、钥匙数量、全局开关门状态、死亡/通关信息和重开次数。
 - 可选收集品：`collectibleBerry` 可在关卡中放置多个；它不影响终点、门或钥匙，只增加挑战与完成度统计。
 - 定时平台：`timedPlatform` 按全局固定节奏在可站立与不可碰撞之间切换，用于节奏跳跃和路线规划。
@@ -49,7 +49,7 @@ npm run preview
 
 ## Movement Tuning Profiles
 
-手感参数属于 `LevelDocument`，而不是浏览器偏好：导出的关卡 JSON 会包含 `movementProfile`，导入后会恢复相同预设与自定义覆盖值。旧关卡没有此字段时会自动使用 Balanced，不会导致导入失败；本功能保持 schemaVersion 为 1。
+关卡会保存所选手感的 `movementProfile` 快照，并作为关卡标签显示：导出的 JSON 包含预设与自定义覆盖值，导入后不依赖浏览器本地库也能恢复相同效果。旧关卡没有此字段时会自动使用 Balanced，不会导致导入失败；本功能保持 schemaVersion 为 1。
 
 - **Balanced**：默认的通用节奏。
 - **Precision**：更快起停与更直接的空中控制。
@@ -57,7 +57,7 @@ npm run preview
 - **Heavy**：较慢加速与更有重量的下落。
 - **Dash Focused**：更突出的 dash 速度与节奏，适合 dashCrystal / dashBlock 路线。
 
-属性面板的 Movement 区域可选择预设，或编辑本关卡的最大移动速度、加速度、空中加速度、跳跃、重力、短跳、土狼时间、跳跃缓冲、dash 与 spring 等参数。输入值会限制在安全范围内；极端但有效的参数仍可能改变关卡可玩性。它们只是为关卡实验提供的独立预设，不复制任何现有商业游戏的手感。
+编辑器的 Movement 下拉框会立即选中预设或已保存的自定义模式，不需要“应用”步骤；编辑器不再提供数值调参。测试关卡侧栏可编辑数值，并用“应用并重新开始测试”生成新的运行期快照。编辑后的设置可按名称保存到浏览器本地的可选模式库，最多 5 套；选择已保存模式时，数值会复制到当前关卡，因此不会让导出 JSON 引用浏览器本地数据。输入值会限制在安全范围内；极端但有效的参数仍可能改变关卡可玩性。
 
 ## Dash runtime 状态
 

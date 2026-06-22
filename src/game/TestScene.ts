@@ -60,7 +60,7 @@ export class TestScene extends Phaser.Scene {
     this.wallJumpEnabled = level.enabledAbilities.includes('wallJump');
     this.wallClimbEnabled = level.enabledAbilities.includes('wallClimb');
     const movement = resolveMovementProfile(level.movementProfile);
-    this.movementPresetName = level.movementProfile?.tuningOverrides !== undefined ? 'Custom' : movement.preset.name;
+    this.movementPresetName = level.movementProfile?.tuningOverrides !== undefined ? (level.movementProfile.customName ?? 'Custom') : movement.preset.name;
     this.movementTuning = movement.tuning;
     this.state = createRuntimeLevelState(this.dashEnabled);
     this.gameInput = new GameInput(this, this.options.keybindings);

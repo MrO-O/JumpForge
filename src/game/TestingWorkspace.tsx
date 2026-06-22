@@ -1,7 +1,10 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { formatKeyBinding } from '../input/keybindingLabels';
-import type { LevelDocument } from '../levels/levelTypes';
 import { loadKeybindings } from '../input/keybindingStorage';
+import type { LevelDocument, MovementProfile } from '../levels/levelTypes';
+import { saveCustomMovementProfile } from '../storage/customMovementProfileStorage';
+import { defaultMovementProfile, getMovementPreset, movementPresetRegistry, resolveMovementProfile } from './movementPresets';
+import { clampPlayerTuningValue, editablePlayerTuningKeys, playerTuningBounds, playerTuningLabels, type PlayerTuning, type PlayerTuningKey } from './playerTuning';
 import { PhaserGameHost } from './PhaserGameHost';
 import type { TestRuntimeStatus } from './TestScene';
 
@@ -11,9 +14,60 @@ interface TestingWorkspaceProps {
   onComplete: () => void;
 }
 
+function cloneProfile(profile: MovementProfile | undefined): MovementProfile {
+  return { ...(profile ?? defaultMovementProfile()), tuningOverrides: profile?.tuningOverrides ? { ...profile.tuningOverrides } : undefined };
+}
+
 export function TestingWorkspace({ level, onExit, onComplete }: TestingWorkspaceProps) {
-  const keybindings = loadKeybindings();
+  const [keybindings] = useState(() => loadKeybindings());
   const [status, setStatus] = useState<TestRuntimeStatus | null>(null);
+  const [testProfile, setTestProfile] = useState<MovementProfile>(() => cloneProfile(level.movementProfile));
+  const initialMovement = resolveMovementProfile(level.movementProfile);
+  const [basePresetId, setBasePresetId] = useState(initialMovement.preset.id);
+  const [draftTuning, setDraftTuning] = useState<PlayerTuning>(initialMovement.tuning);
+  const [editingCustom, setEditingCustom] = useState(false);
+  const [customName, setCustomName] = useState(level.movementProfile?.customName ?? '自定义手感');
+  const [movementMessage, setMovementMessage] = useState('');
+  const testLevel = useMemo(() => ({ ...level, movementProfile: testProfile }), [level, testProfile]);
+  const currentPreset = getMovementPreset(basePresetId) ?? initialMovement.preset;
+
+  const startCustomEditing = () => {
+    const resolved = resolveMovementProfile(testProfile);
+    setBasePresetId(resolved.preset.id);
+    setDraftTuning(resolved.tuning);
+    setCustomName(testProfile.customName ?? '自定义手感');
+    setEditingCustom(true);
+    setMovementMessage('');
+  };
+
+  const selectBasePreset = (presetId: string) => {
+    const preset = getMovementPreset(presetId);
+    if (!preset) return;
+    setBasePresetId(preset.id);
+    setDraftTuning({ ...preset.tuning });
+  };
+
+  const updateTuning = (key: PlayerTuningKey, rawValue: string) => {
+    const value = Number(rawValue);
+    if (!Number.isFinite(value)) return;
+    setDraftTuning((current) => ({ ...current, [key]: clampPlayerTuningValue(key, value) }));
+  };
+
+  const applyCustomToTest = () => {
+    setTestProfile({ presetId: basePresetId, customName: customName.trim() || '测试自定义', tuningOverrides: { ...draftTuning } });
+    setStatus(null);
+    setMovementMessage('已应用自定义数值，并从初始出生点重新开始测试。');
+  };
+
+  const saveCustom = () => {
+    try {
+      const saved = saveCustomMovementProfile({ name: customName, presetId: basePresetId, tuningOverrides: { ...draftTuning } });
+      setCustomName(saved.name);
+      setMovementMessage(`已保存“${saved.name}”。返回编辑器后可直接在模式下拉框中选择。`);
+    } catch (error) {
+      setMovementMessage(error instanceof Error ? error.message : '保存自定义手感失败。');
+    }
+  };
 
   return (
     <main className="testing-workspace">
@@ -34,6 +88,31 @@ export function TestingWorkspace({ level, onExit, onComplete }: TestingWorkspace
             <div><dt>Restart initial</dt><dd>{formatKeyBinding(keybindings.restart)}</dd></div>
             <div><dt>Return</dt><dd>{formatKeyBinding(keybindings.exitTest)}</dd></div>
           </dl>
+        </section>
+
+        <section className="testing-sidebar-section testing-movement-panel" aria-labelledby="testing-movement-heading">
+          <h2 id="testing-movement-heading">Movement 手感</h2>
+          <p className="testing-movement-current">本次测试：{testProfile.tuningOverrides ? (testProfile.customName ?? '自定义') : currentPreset.name}</p>
+          {!editingCustom ? <button type="button" className="secondary-button" onClick={startCustomEditing}>编辑自定义数值</button> : <>
+            <label>基准预设
+              <select value={basePresetId} onChange={(event) => selectBasePreset(event.target.value)}>
+                {Object.values(movementPresetRegistry).map((preset) => <option key={preset.id} value={preset.id}>{preset.name}</option>)}
+              </select>
+            </label>
+            <div className="testing-tuning-grid">
+              {editablePlayerTuningKeys.map((key) => {
+                const bounds = playerTuningBounds[key];
+                return <label key={key}>{playerTuningLabels[key]}
+                  <input type="number" min={bounds.min} max={bounds.max} step={bounds.step} value={draftTuning[key]} onChange={(event) => updateTuning(key, event.target.value)} />
+                </label>;
+              })}
+            </div>
+            <button type="button" className="secondary-button" onClick={applyCustomToTest}>应用并重新开始测试</button>
+            <label>保存名称<input maxLength={40} value={customName} onChange={(event) => setCustomName(event.target.value)} /></label>
+            <button type="button" onClick={saveCustom}>保存为可选手感模式</button>
+            <button type="button" className="text-button" onClick={() => setEditingCustom(false)}>收起数值编辑</button>
+          </>}
+          {movementMessage && <p className="testing-runtime-message" role="status">{movementMessage}</p>}
         </section>
 
         <section className="testing-sidebar-section" aria-labelledby="testing-status-heading">
@@ -57,7 +136,7 @@ export function TestingWorkspace({ level, onExit, onComplete }: TestingWorkspace
       </aside>
 
       <section className="testing-game-panel" aria-label="Level test game">
-        <PhaserGameHost level={level} keybindings={keybindings} onExit={onExit} onComplete={onComplete} onStatusChange={setStatus} />
+        <PhaserGameHost level={testLevel} keybindings={keybindings} onExit={onExit} onComplete={onComplete} onStatusChange={setStatus} />
       </section>
     </main>
   );

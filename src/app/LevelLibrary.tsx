@@ -1,5 +1,6 @@
 import { validateLevel } from '../levels/levelCommands';
 import type { LevelDocument } from '../levels/levelTypes';
+import { getMovementPreset } from '../game/movementPresets';
 
 interface LevelLibraryProps {
   samples: readonly LevelDocument[];
@@ -16,6 +17,12 @@ interface LevelLibraryProps {
 function updatedAt(level: LevelDocument): string {
   const value = level.metadata?.updatedAt;
   return value ? new Intl.DateTimeFormat('zh-CN', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value)) : '未保存';
+}
+
+function movementLabel(level: LevelDocument): string {
+  const profile = level.movementProfile;
+  if (profile?.tuningOverrides) return profile.customName ?? '自定义手感';
+  return getMovementPreset(profile?.presetId)?.name ?? 'Balanced';
 }
 
 function LevelCard({ level, source, onOpen, onDuplicate, onDelete, onExport }: {
@@ -37,7 +44,7 @@ function LevelCard({ level, source, onOpen, onDuplicate, onDelete, onExport }: {
         <span className="source-badge">{source === 'template' ? '模板' : '本地'}</span>
       </div>
       <p className="muted">{level.width} × {level.height} · {level.tileSize}px</p>
-      <p className="abilities">{level.enabledAbilities.join(' · ')}</p>
+      <div className="level-tags"><span className="level-tag">手感：{movementLabel(level)}</span>{level.enabledAbilities.map((ability) => <span className="level-tag" key={ability}>{ability}</span>)}</div>
       <p className="updated-at">更新：{updatedAt(level)}</p>
       <div className="card-actions">
         <button type="button" onClick={onOpen}>{source === 'template' ? '复制并编辑' : '加载编辑'}</button>

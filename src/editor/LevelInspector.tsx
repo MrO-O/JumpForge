@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { normalizeEnabledAbilities } from '../abilities/abilityRegistry';
 import type { AbilityId } from '../abilities/abilityTypes';
-import { defaultMovementProfile, getMovementPreset, resolveMovementProfile } from '../game/movementPresets';
-import { clampPlayerTuningValue, editablePlayerTuningKeys, playerTuningBounds, playerTuningLabels, type PlayerTuningKey } from '../game/playerTuning';
+import { defaultMovementProfile, getMovementPreset, movementPresetRegistry, resolveMovementProfile } from '../game/movementPresets';
 import { getNonEmptyTilesOutsideBounds, resizeLevel } from '../levels/levelCommands';
 import type { LevelDocument, LevelValidationResult, MovementProfile } from '../levels/levelTypes';
+import { deleteCustomMovementProfile, loadCustomMovementProfiles, type SavedCustomMovementProfile } from '../storage/customMovementProfileStorage';
 
 interface LevelInspectorProps {
   level: LevelDocument;
@@ -13,18 +13,23 @@ interface LevelInspectorProps {
   onNotice: (message: string) => void;
 }
 
+function isSavedProfileSelected(profile: MovementProfile, savedProfile: SavedCustomMovementProfile): boolean {
+  return profile.presetId === savedProfile.presetId
+    && profile.customName === savedProfile.name
+    && JSON.stringify(profile.tuningOverrides) === JSON.stringify(savedProfile.tuningOverrides);
+}
+
 export function LevelInspector({ level, validation, onChange, onNotice }: LevelInspectorProps) {
   const [width, setWidth] = useState(String(level.width));
   const [height, setHeight] = useState(String(level.height));
+  const [savedCustomProfiles, setSavedCustomProfiles] = useState<SavedCustomMovementProfile[]>(() => loadCustomMovementProfiles());
   const profile = level.movementProfile ?? defaultMovementProfile();
   const resolvedMovement = resolveMovementProfile(profile);
-  const [selectedPresetId, setSelectedPresetId] = useState(profile.presetId);
-  const [editingCustom, setEditingCustom] = useState(Boolean(profile.tuningOverrides));
+  const selectedSavedProfile = savedCustomProfiles.find((savedProfile) => isSavedProfileSelected(profile, savedProfile));
+  const selectionValue = selectedSavedProfile ? `saved:${selectedSavedProfile.id}` : profile.tuningOverrides ? 'current-custom' : profile.presetId;
 
   useEffect(() => setWidth(String(level.width)), [level.width]);
   useEffect(() => setHeight(String(level.height)), [level.height]);
-  useEffect(() => setSelectedPresetId(profile.presetId), [profile.presetId]);
-  useEffect(() => setEditingCustom(Boolean(profile.tuningOverrides)), [profile.tuningOverrides]);
 
   const update = (patch: Partial<LevelDocument>) => onChange({ ...level, ...patch, metadata: { ...level.metadata, updatedAt: new Date().toISOString() } });
   const resize = () => {
@@ -57,47 +62,29 @@ export function LevelInspector({ level, validation, onChange, onNotice }: LevelI
     update({ enabledAbilities: enabled ? normalizeEnabledAbilities([...level.enabledAbilities, abilityId]) : level.enabledAbilities.filter((ability) => ability !== abilityId) });
   };
 
-  const updateMovementProfile = (movementProfile: MovementProfile) => update({ movementProfile });
-  const applyPreset = () => {
-    if (!getMovementPreset(selectedPresetId)) {
-      onNotice('请选择有效的 movement preset。');
+  const selectMovementProfile = (value: string) => {
+    if (value === 'current-custom') return;
+    const savedProfile = value.startsWith('saved:') ? savedCustomProfiles.find((candidate) => candidate.id === value.slice('saved:'.length)) : undefined;
+    if (savedProfile) {
+      update({ movementProfile: { presetId: savedProfile.presetId, customName: savedProfile.name, tuningOverrides: { ...savedProfile.tuningOverrides } } });
       return;
     }
-    updateMovementProfile({ presetId: selectedPresetId });
-    setEditingCustom(false);
-  };
-  const setCustomEditing = (enabled: boolean) => {
-    if (!enabled) {
-      updateMovementProfile({ presetId: profile.presetId });
-      setEditingCustom(false);
-      return;
-    }
-    updateMovementProfile({
-      presetId: profile.presetId,
-      customName: profile.customName ?? '本关卡自定义',
-      tuningOverrides: { ...profile.tuningOverrides },
-    });
-    setEditingCustom(true);
-  };
-  const updateTuning = (key: PlayerTuningKey, rawValue: string) => {
-    const value = Number(rawValue);
-    if (!Number.isFinite(value)) return;
-    updateMovementProfile({
-      presetId: profile.presetId,
-      customName: profile.customName ?? '本关卡自定义',
-      tuningOverrides: { ...profile.tuningOverrides, [key]: clampPlayerTuningValue(key, value) },
-    });
-  };
-  const saveCustom = () => {
-    updateMovementProfile({
-      presetId: profile.presetId,
-      customName: profile.customName ?? '本关卡自定义',
-      tuningOverrides: { ...profile.tuningOverrides },
-    });
-    onNotice('已保存为当前关卡的自定义手感；请点击顶部“保存”写入 localStorage。');
+    if (!getMovementPreset(value)) return;
+    update({ movementProfile: { presetId: value } });
   };
 
-  const selectedPreset = getMovementPreset(selectedPresetId) ?? resolvedMovement.preset;
+  const deleteSelectedCustomProfile = () => {
+    if (!selectedSavedProfile) return;
+    if (!window.confirm(`删除已保存的自定义手感“${selectedSavedProfile.name}”？当前关卡会保留自己的数值。`)) return;
+    try {
+      setSavedCustomProfiles(deleteCustomMovementProfile(selectedSavedProfile.id));
+      onNotice('已删除保存的自定义手感。');
+    } catch (error) {
+      onNotice(error instanceof Error ? error.message : '删除自定义手感失败。');
+    }
+  };
+
+  const selectedPreset = getMovementPreset(profile.presetId) ?? resolvedMovement.preset;
 
   return (
     <aside className="inspector" aria-label="Level inspector">
@@ -128,32 +115,16 @@ export function LevelInspector({ level, validation, onChange, onNotice }: LevelI
 
       <section className="inspector-section movement-panel">
         <h3>Movement 手感</h3>
-        <label>预设
-          <select value={selectedPresetId} onChange={(event) => setSelectedPresetId(event.target.value)}>
-            <option value="balanced">Balanced</option>
-            <option value="precision">Precision</option>
-            <option value="floaty">Floaty</option>
-            <option value="heavy">Heavy</option>
-            <option value="dashFocused">Dash Focused</option>
+        <label>模式
+          <select value={selectionValue} onChange={(event) => selectMovementProfile(event.target.value)}>
+            {Object.values(movementPresetRegistry).map((preset) => <option key={preset.id} value={preset.id}>{preset.name}</option>)}
+            {profile.tuningOverrides && !selectedSavedProfile && <option value="current-custom">当前自定义：{profile.customName ?? '未保存'}</option>}
+            {savedCustomProfiles.map((savedProfile) => <option key={savedProfile.id} value={`saved:${savedProfile.id}`}>自定义：{savedProfile.name}</option>)}
           </select>
         </label>
         <p className="movement-description">{selectedPreset.description}{selectedPreset.recommendedFor ? ` 推荐：${selectedPreset.recommendedFor}` : ''}</p>
-        <div className="movement-actions">
-          <button type="button" className="secondary-button" onClick={applyPreset}>应用预设</button>
-          <button type="button" className="secondary-button" onClick={() => { updateMovementProfile({ presetId: profile.presetId }); setEditingCustom(false); }}>重置为预设</button>
-        </div>
-        <label className="checkbox-row"><input type="checkbox" checked={editingCustom} onChange={(event) => setCustomEditing(event.target.checked)} />编辑本关卡自定义数值</label>
-        {editingCustom && <>
-          <div className="movement-tuning-grid">
-            {editablePlayerTuningKeys.map((key) => {
-              const bounds = playerTuningBounds[key];
-              return <label key={key}>{playerTuningLabels[key]}
-                <input type="number" min={bounds.min} max={bounds.max} step={bounds.step} value={resolvedMovement.tuning[key]} onChange={(event) => updateTuning(key, event.target.value)} />
-              </label>;
-            })}
-          </div>
-          <button type="button" className="secondary-button" onClick={saveCustom}>保存为本关卡自定义</button>
-        </>}
+        <p className="reserved-note">选择后立即成为本关卡的手感标签。自定义数值请在“测试关卡”中编辑和保存。</p>
+        {selectedSavedProfile && <button type="button" className="text-button" onClick={deleteSelectedCustomProfile}>删除保存的“{selectedSavedProfile.name}”</button>}
       </section>
 
       <section className={`validation-panel${validation.valid ? ' is-valid' : ' is-invalid'}`}>
