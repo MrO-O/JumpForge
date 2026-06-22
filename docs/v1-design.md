@@ -402,7 +402,7 @@ v1 registry：
 | tile 行为扩展导致条件分支爆炸 | 以 `TileDefinition.runtime.kind` 和集中 handler 表分派；新增 tile 必须先补 registry、校验和 handler。 |
 | 地图格式兼容 | 每份地图强制 `schemaVersion`；导入先校验再迁移，迁移函数链保留且有样本 JSON 测试。 |
 | 平台跳跃手感调试 | 所有运动参数集中为 `PlayerTuning` 与 preset registry；每关保存 profile，运行时从快照解析并钳制数值，避免 NaN 或极端输入破坏物理。 |
-| 编辑器与 runtime 显示不一致 | 共用 registry、tileSize、坐标换算和临时色彩；每新增 tile 至少建立编辑预览与 runtime 验证关。 |
+| 编辑器与 runtime 显示不一致 | 共用 registry、tileSize、坐标换算和临时色彩；每新增 tile 至少建立编辑预览，并通过编辑器临时关卡进行 runtime 验证。内置样例仅在明确需要演示、教学或回归测试时新增。 |
 | 机制组合不可控 | v1 将 key/door 与 switch/door 定义为全局简单语义；带通道、颜色、定时器等实例参数延后到对象层。 |
 | localStorage 容量与损坏 | v1 仅存小型网格 JSON；写入前校验，读取失败时保留原始备份并提示导出恢复。 |
 

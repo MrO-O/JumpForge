@@ -96,6 +96,7 @@ npm run preview
 - spawn 和 goal 必须保持唯一。
 - 保存、导入、导出必须经过校验；非法 JSON 不应导致应用崩溃。
 - 关卡数据格式必须保持可导入导出；修改 schema 时必须考虑 migration。
+- Built-in sample levels are optional, not a required deliverable for every feature. Do not modify `sampleLevels.ts` unless the user explicitly asks for a built-in level, the task is about sample levels, or an existing sample needs a compatibility adjustment. For normal feature work, describe manual editor-based validation instead.
 
 ## Phaser Runtime Rules
 

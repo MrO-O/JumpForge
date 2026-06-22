@@ -36,6 +36,10 @@ npm run preview
 - 定时平台：`timedPlatform` 按全局固定节奏在可站立与不可碰撞之间切换，用于节奏跳跃和路线规划。
 - 移动平台：`movingPlatform` 是与下半块同规格的 32×16 平台，当前以固定全局参数水平往返移动。
 
+## 内置样例关卡
+
+现有内置样例关卡会继续保留，但后续新增机制、tile 或 UI 默认不再自动增加内置样例。验收优先通过编辑器临时搭建测试场景完成；只有明确需要演示、教学、回归测试，或任务本身是整理内置关卡时，才修改 `sampleLevels.ts`。
+
 ## Wall Movement + Stamina
 
 `wallJump` 与 `wallClimb` 是独立的可选能力：前者适用于任何当前有效的实体墙面，后者只作用于 `climbWall`。`climbWall` 与 `staminaRefill` 都要求关卡启用 `wallClimb`，未启用时校验和 palette 会阻止使用。体力只属于一次 Phaser 测试运行：落地、体力补给、死亡和 `R` 重开均会恢复，绝不会写回关卡 JSON。
