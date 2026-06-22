@@ -17,6 +17,7 @@ export type TileId =
   | 'climbWall'
   | 'staminaRefill'
   | 'checkpoint'
+  | 'collectibleBerry'
   | 'crumbleBlock'
   | 'halfBlockTop'
   | 'halfBlockBottom'

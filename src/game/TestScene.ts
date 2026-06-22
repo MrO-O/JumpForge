@@ -16,6 +16,8 @@ export interface TestRuntimeStatus {
   stamina: string;
   checkpointStatus: 'None' | 'Active';
   keyCount: number;
+  collectibleCollectedCount: number;
+  collectibleTotal: number;
   switchDoorsOpen: boolean;
   elapsedSeconds: number;
   restartCount: number;
@@ -70,6 +72,7 @@ export class TestScene extends Phaser.Scene {
     this.state.spawnPosition = this.builtLevel.spawnPosition;
     this.state.initialSpawnPosition = this.builtLevel.spawnPosition ? { ...this.builtLevel.spawnPosition } : null;
     this.state.activeRespawnPosition = this.builtLevel.spawnPosition ? { ...this.builtLevel.spawnPosition } : null;
+    this.state.collectibleTotal = this.builtLevel.collectibleTotal;
     this.events.once('shutdown', this.shutdown, this);
     this.scale.on('resize', this.updateCameraViewport, this);
     this.updateCameraViewport();
@@ -132,9 +135,9 @@ export class TestScene extends Phaser.Scene {
   private killPlayer(message: string): void {
     if (this.state.isDead || this.state.isComplete || !this.player || !this.controller) return;
     const source = this.state.activeCheckpointCell ? 'checkpoint' : 'initial spawn';
-    resetRuntimeAttempt(this.state, `${message} Respawning from ${source}…`, this.dashEnabled, true);
+    resetRuntimeAttempt(this.state, `${message} Respawning from ${source}…`, this.dashEnabled, true, true);
     this.state.isDead = true;
-    this.tileRuntime?.resetForAttempt(true);
+    this.tileRuntime?.resetForAttempt(true, true);
     this.player.setFillStyle(0xef4444);
     this.controller.setEnabled(false);
     this.respawnEvent = this.time.delayedCall(this.controller.tuning.respawnDelayMs, () => this.respawnPlayer());
@@ -156,7 +159,7 @@ export class TestScene extends Phaser.Scene {
   private completeLevel(): void {
     if (this.state.isDead || this.state.isComplete || !this.controller) return;
     this.state.isComplete = true;
-    this.state.currentMessage = 'Level complete! Return to the editor when ready.';
+    this.state.currentMessage = `Level complete! Berries: ${this.state.collectedCollectibleCells.size} / ${this.state.collectibleTotal}. Return to the editor when ready.`;
     this.controller.setEnabled(false);
     this.publishStatus();
     this.options.onComplete?.();
@@ -191,6 +194,8 @@ export class TestScene extends Phaser.Scene {
       stamina: this.controller?.wallClimbEnabled ? `${Math.ceil(this.state.currentStamina)}/${Math.round(this.controller.tuning.maxStamina)}` : '—',
       checkpointStatus: this.state.activeCheckpointCell ? 'Active' : 'None',
       keyCount: this.state.keyCount,
+      collectibleCollectedCount: this.state.collectedCollectibleCells.size,
+      collectibleTotal: this.state.collectibleTotal,
       switchDoorsOpen: this.state.switchDoorsOpen,
       elapsedSeconds: Math.floor(this.state.elapsedMs / 1000),
       restartCount: this.state.restartCount,

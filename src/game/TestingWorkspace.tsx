@@ -46,6 +46,7 @@ export function TestingWorkspace({ level, onExit, onComplete }: TestingWorkspace
               <div><dt>Stamina</dt><dd>{status.stamina}</dd></div>
               <div><dt>Checkpoint</dt><dd>{status.checkpointStatus}</dd></div>
               <div><dt>Keys</dt><dd>{status.keyCount}</dd></div>
+              <div><dt>Berries</dt><dd>{status.collectibleCollectedCount} / {status.collectibleTotal}</dd></div>
               <div><dt>Switch doors</dt><dd>{status.switchDoorsOpen ? 'OPEN' : 'CLOSED'}</dd></div>
               <div><dt>Time</dt><dd>{status.elapsedSeconds}s</dd></div>
               <div><dt>Restarts</dt><dd>{status.restartCount}</dd></div>

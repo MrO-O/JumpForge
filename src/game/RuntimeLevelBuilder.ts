@@ -41,6 +41,7 @@ export interface RuntimeLevelBuildResult {
   climbWalls: Phaser.Physics.Arcade.StaticGroup;
   staminaRefills: Phaser.Physics.Arcade.StaticGroup;
   checkpoints: Phaser.Physics.Arcade.StaticGroup;
+  collectibleBerries: Phaser.Physics.Arcade.StaticGroup;
   crumbleBlocks: Phaser.Physics.Arcade.StaticGroup;
   partialSolids: Phaser.Physics.Arcade.StaticGroup;
   spawnPosition: RuntimePosition | null;
@@ -49,6 +50,7 @@ export interface RuntimeLevelBuildResult {
   staticWallCells: Map<RuntimeCellKey, MergeableStaticTileId>;
   mergedStaticColliderCount: number;
   tileSize: number;
+  collectibleTotal: number;
   dashBlockClusters: Map<string, DashBlockCluster>;
   dashBlockClustersByCell: Map<RuntimeCellKey, DashBlockCluster>;
 }
@@ -124,6 +126,10 @@ const tileBuildHandlers: Partial<Record<RuntimeTileKind, TileBuildHandler>> = {
   dashCrystal: (context) => { context.entity.trigger = createPhysicalTile(context, context.result.dashCrystals); },
   staminaRefill: (context) => { context.entity.trigger = createPhysicalTile(context, context.result.staminaRefills); },
   checkpoint: (context) => { context.entity.trigger = createPhysicalTile(context, context.result.checkpoints); },
+  collectibleBerry: (context) => {
+    context.entity.trigger = createPhysicalTile(context, context.result.collectibleBerries);
+    context.result.collectibleTotal += 1;
+  },
   crumbleBlock: (context) => { context.entity.collider = createPhysicalTile(context, context.result.crumbleBlocks); },
 };
 
@@ -170,6 +176,7 @@ export function buildRuntimeLevel(scene: Phaser.Scene, level: LevelDocument): Ru
     climbWalls: scene.physics.add.staticGroup(),
     staminaRefills: scene.physics.add.staticGroup(),
     checkpoints: scene.physics.add.staticGroup(),
+    collectibleBerries: scene.physics.add.staticGroup(),
     crumbleBlocks: scene.physics.add.staticGroup(),
     partialSolids: scene.physics.add.staticGroup(),
     spawnPosition: null,
@@ -178,6 +185,7 @@ export function buildRuntimeLevel(scene: Phaser.Scene, level: LevelDocument): Ru
     staticWallCells: new Map(),
     mergedStaticColliderCount: 0,
     tileSize: level.tileSize,
+    collectibleTotal: 0,
     dashBlockClusters: new Map(),
     dashBlockClustersByCell: new Map(),
   };

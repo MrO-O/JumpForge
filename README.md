@@ -2,7 +2,7 @@
 
 JumpForge 是浏览器端 2D 平台跳跃关卡设计工具。它以地图编辑器、可扩展 tile 机制和可选动作能力为核心，用于实验动作挑战与解谜关卡。
 
-当前完成 **Phase 6C：Small Tile Variants**。编辑器始终是本地优先的工作台；测试模式只使用关卡深拷贝快照，所有运行中状态都不会修改编辑器地图或 localStorage。
+当前完成 **Phase 7A：Collectible Berry**。编辑器始终是本地优先的工作台；测试模式只使用关卡深拷贝快照，所有运行中状态都不会修改编辑器地图或 localStorage。
 
 ## 运行
 
@@ -30,6 +30,7 @@ npm run preview
 - wallClimb：仅在 `climbWall` 上按住 `C` 抓墙/攀爬并消耗体力；落地或接触 `staminaRefill` 会恢复体力。它可独立于 wallJump 启用。
 - Movement Tuning Profiles：每关可选 Balanced、Precision、Floaty、Heavy 或 Dash Focused 预设，并可为当前关卡自定义移动、跳跃、dash 与 spring 参数。
 - HUD：显示 movement preset、dash 状态、钥匙数量、全局开关门状态、死亡/通关信息和重开次数。
+- 可选收集品：`collectibleBerry` 可在关卡中放置多个；它不影响终点、门或钥匙，只增加挑战与完成度统计。
 
 ## Wall Movement + Stamina
 
@@ -88,6 +89,12 @@ Checkpoint tiles are exported as ordinary level tiles, so shared JSON retains th
 `crumbleBlock` is a solid, reusable fragile-platform tile. Landing on its top starts a 500ms delay: it changes color to show that it is cracking, then disappears and stops colliding. Side contact does not trigger it. Each tile tracks its own delay and broken state in the Phaser runtime only; neither state is written to `LevelDocument` or exported JSON.
 
 Death and the configured restart key restore every crumble block, including any block that was cracking or already broken. When combining crumble blocks with checkpoints, place the checkpoint on stable terrain or another safe area so a collapsed route cannot create an accidental soft lock.
+
+## Collectible berries
+
+`collectibleBerry` is an optional, non-blocking collectible tile. Touching it hides it for the current test and the test HUD shows `Berries: collected / total`. Reaching the goal never requires collecting berries, and the completion message records the final total.
+
+Berry progress belongs only to the Phaser runtime: it is never written to `LevelDocument`, localStorage, or exported level JSON. In this Phase 7A simplified rule set, death and checkpoint respawn retain berries already collected during the test; the configured restart key and leaving then re-entering test mode clear that progress and restore every berry. A future phase may add more demanding uncommitted-collectible rules, including rollback on death.
 
 ## Small tile variants
 

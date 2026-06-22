@@ -81,9 +81,10 @@ export class TileRuntimeController {
     this.scene.physics.add.overlap(this.player, this.level.dashCrystals, (_player, crystal) => this.handleDashCrystal(crystal));
     this.scene.physics.add.overlap(this.player, this.level.staminaRefills, (_player, refill) => this.handleStaminaRefill(refill));
     this.scene.physics.add.overlap(this.player, this.level.checkpoints, (_player, checkpoint) => this.handleCheckpoint(checkpoint));
+    this.scene.physics.add.overlap(this.player, this.level.collectibleBerries, (_player, berry) => this.handleCollectibleBerry(berry));
   }
 
-  resetForAttempt(preserveCheckpoint = false): void {
+  resetForAttempt(preserveCheckpoint = false, preserveCollectibles = false): void {
     this.switchCooldowns.clear();
     for (const timer of this.crumbleTimers.values()) timer.remove(false);
     this.crumbleTimers.clear();
@@ -118,6 +119,13 @@ export class TileRuntimeController {
         case 'checkpoint':
           setCheckpointAppearance(entity, preserveCheckpoint && entity.cellKey === this.state.activeCheckpointCell);
           break;
+        case 'collectibleBerry': {
+          const collected = preserveCollectibles && this.state.collectedCollectibleCells.has(entity.cellKey);
+          setVisible(entity, !collected);
+          this.setTriggerEnabled(entity, !collected);
+          if (collected) this.state.hiddenTileCells.add(entity.cellKey);
+          break;
+        }
         case 'crumbleBlock':
           this.restoreCrumbleBlock(entity);
           break;
@@ -173,6 +181,16 @@ export class TileRuntimeController {
     setVisible(entity, false);
     this.setTriggerEnabled(entity, false);
     this.callbacks.onMessage('Key collected.');
+  }
+
+  private handleCollectibleBerry(object: unknown): void {
+    const entity = getEntity(this.level, object);
+    if (!entity || this.state.collectedCollectibleCells.has(entity.cellKey)) return;
+    this.state.collectedCollectibleCells.add(entity.cellKey);
+    this.state.hiddenTileCells.add(entity.cellKey);
+    setVisible(entity, false);
+    this.setTriggerEnabled(entity, false);
+    this.callbacks.onMessage(`Berry collected! ${this.state.collectedCollectibleCells.size} / ${this.state.collectibleTotal}`);
   }
 
   private handleStaminaRefill(object: unknown): void {

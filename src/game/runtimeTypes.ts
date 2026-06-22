@@ -28,6 +28,8 @@ export interface RuntimeLevelState {
   elapsedMs: number;
   keyCount: number;
   collectedKeys: Set<RuntimeCellKey>;
+  collectedCollectibleCells: Set<RuntimeCellKey>;
+  collectibleTotal: number;
   hiddenTileCells: Set<RuntimeCellKey>;
   openedLockedDoors: Set<RuntimeCellKey>;
   pressedSwitches: Set<RuntimeCellKey>;
@@ -62,6 +64,8 @@ export const createRuntimeLevelState = (dashEnabled = false): RuntimeLevelState 
   elapsedMs: 0,
   keyCount: 0,
   collectedKeys: new Set(),
+  collectedCollectibleCells: new Set(),
+  collectibleTotal: 0,
   hiddenTileCells: new Set(),
   openedLockedDoors: new Set(),
   pressedSwitches: new Set(),
@@ -83,18 +87,20 @@ export const createRuntimeLevelState = (dashEnabled = false): RuntimeLevelState 
   brokenCrumbleBlockCells: new Set(),
 });
 
-/** Restore per-life mechanic progress; a death may retain an already activated checkpoint. */
+/** Restore per-life mechanic progress; a death may retain its checkpoint and collected optional items. */
 export function resetRuntimeAttempt(
   state: RuntimeLevelState,
   message: string,
   dashEnabled = false,
   preserveCheckpoint = false,
+  preserveCollectibles = false,
 ): void {
   state.isDead = false;
   state.isComplete = false;
   state.elapsedMs = 0;
   state.keyCount = 0;
   state.collectedKeys.clear();
+  if (!preserveCollectibles) state.collectedCollectibleCells.clear();
   state.hiddenTileCells.clear();
   state.openedLockedDoors.clear();
   state.pressedSwitches.clear();

@@ -20,6 +20,7 @@ JumpForge 是浏览器端 2D 平台跳跃关卡设计工具。核心不是单纯
 - Phase 6A：checkpoint tile、运行期检查点激活与最近检查点重生。
 - Phase 6B：crumbleBlock tile、运行期触发延迟与死亡/重开恢复。
 - Phase 6C：halfBlock 小规格 tile 变体与局部碰撞/编辑器表现。
+- Phase 7A：collectibleBerry 可选收集品、运行期收集统计与死亡保留 / 完整重开清空规则。
 - 后续能力扩展必须由用户明确提出。
 
 ## Commands
@@ -56,6 +57,7 @@ npm run preview
 - 退出测试后编辑器地图必须保持不变。
 - Checkpoint activation and the active respawn position are TestScene runtime state only; never write them back to `LevelDocument` or level JSON.
 - Crumble block trigger, timer, and broken state are runtime-only. Restore them on both death and full test restart.
+- Collectible berry progress is TestScene runtime state only. It is optional, must not affect key/door behavior or goal completion, survives ordinary death, and resets only on full test restart or a new test session.
 
 ## Global Input Settings
 
@@ -68,7 +70,7 @@ npm run preview
 - tile 行为必须通过 tileRegistry 的 `runtime.kind` 和集中 runtime handler 管理。
 - 不要把大量 `if tileId === "..."` 散落在 TestScene、PlayerController 或 React 组件中。
 - 新增 tile 时同步更新：tileRegistry、必要的 validateLevel 规则、runtime handler、editor palette 表现、README 或相关文档。
-- v1 tile：empty、solid、oneWayPlatform、spike、spawn、goal、spring、key、lockedDoor、switch、switchDoor、dashCrystal、dashBlock、climbWall、staminaRefill。
+- v1 tile：empty、solid、oneWayPlatform、spike、spawn、goal、spring、key、lockedDoor、switch、switchDoor、dashCrystal、dashBlock、climbWall、staminaRefill、checkpoint、crumbleBlock、collectibleBerry、halfBlockTop、halfBlockBottom、halfBlockLeft、halfBlockRight。
 - Checkpoint tiles are non-unique runtime triggers. Death keeps the active checkpoint while a full test restart clears it and returns to the initial spawn.
 - Crumble blocks use centralized runtime handlers; do not put their timers or collision toggles in `TestScene`.
 - Small tile variants use registry-local collision/visual boxes; do not change global tileSize or introduce an object layer.
