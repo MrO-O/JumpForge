@@ -5,6 +5,16 @@ import { toCellKey, type RuntimeCellKey, type RuntimeLevelState } from './runtim
 
 export const crumbleBlockDelayMs = 500;
 
+/** Shared timing and visuals for every timed platform in one test session. */
+export const timedPlatformTiming = {
+  activeMs: 1200,
+  inactiveMs: 900,
+  inactiveAlpha: 0.16,
+} as const;
+
+const timedPlatformCycleMs = timedPlatformTiming.activeMs
+  + timedPlatformTiming.inactiveMs;
+
 export interface TileRuntimeHandlerCallbacks {
   onDeath: (message: string) => void;
   onComplete: () => void;
@@ -54,6 +64,9 @@ export class TileRuntimeController {
   private readonly switchCooldowns = new Map<RuntimeCellKey, number>();
   private readonly crumbleTimers = new Map<RuntimeCellKey, Phaser.Time.TimerEvent>();
   private lastDoorPromptAt = Number.NEGATIVE_INFINITY;
+  private timedPlatformElapsedMs = 0;
+  private timedPlatformsAreActive = false;
+  private readonly pendingTimedPlatformCells = new Set<RuntimeCellKey>();
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -73,6 +86,7 @@ export class TileRuntimeController {
     this.scene.physics.add.collider(this.player, this.level.switchDoors);
     this.scene.physics.add.collider(this.player, this.level.dashBlocks, (_player, dashBlock) => this.handleDashBlock(dashBlock));
     this.scene.physics.add.collider(this.player, this.level.crumbleBlocks, (_player, crumbleBlock) => this.handleCrumbleBlock(crumbleBlock));
+    this.scene.physics.add.collider(this.player, this.level.timedPlatforms);
     this.scene.physics.add.overlap(this.player, this.level.spikes, () => this.callbacks.onDeath('You touched spikes.'));
     this.scene.physics.add.overlap(this.player, this.level.goals, () => this.callbacks.onComplete());
     this.scene.physics.add.collider(this.player, this.level.springs, (_player, spring) => this.handleSpring(spring));
@@ -82,6 +96,7 @@ export class TileRuntimeController {
     this.scene.physics.add.overlap(this.player, this.level.staminaRefills, (_player, refill) => this.handleStaminaRefill(refill));
     this.scene.physics.add.overlap(this.player, this.level.checkpoints, (_player, checkpoint) => this.handleCheckpoint(checkpoint));
     this.scene.physics.add.overlap(this.player, this.level.collectibleBerries, (_player, berry) => this.handleCollectibleBerry(berry));
+    this.applyTimedPlatformPhase();
   }
 
   resetForAttempt(preserveCheckpoint = false, preserveCollectibles = false): void {
@@ -89,6 +104,9 @@ export class TileRuntimeController {
     for (const timer of this.crumbleTimers.values()) timer.remove(false);
     this.crumbleTimers.clear();
     this.lastDoorPromptAt = Number.NEGATIVE_INFINITY;
+    this.timedPlatformElapsedMs = 0;
+    this.timedPlatformsAreActive = false;
+    this.pendingTimedPlatformCells.clear();
     for (const entity of this.level.entitiesByCell.values()) {
       switch (entity.kind) {
         case 'key':
@@ -140,6 +158,13 @@ export class TileRuntimeController {
         if (entity) setVisible(entity, true);
       }
     }
+    this.applyTimedPlatformPhase();
+  }
+
+  update(deltaMs: number): void {
+    if (this.level.timedPlatforms.getLength() === 0) return;
+    this.timedPlatformElapsedMs = (this.timedPlatformElapsedMs + deltaMs) % timedPlatformCycleMs;
+    this.applyTimedPlatformPhase();
   }
 
   /** A small tile-neighbour probe is more reliable than Arcade side flags for wall abilities. */
@@ -234,6 +259,60 @@ export class TileRuntimeController {
     entity.glyph.setAlpha(0.7);
     this.callbacks.onMessage('Crumble block cracking...');
     this.crumbleTimers.set(entity.cellKey, this.scene.time.delayedCall(crumbleBlockDelayMs, () => this.breakCrumbleBlock(entity)));
+  }
+
+  private applyTimedPlatformPhase(): void {
+    const active = this.timedPlatformElapsedMs < timedPlatformTiming.activeMs;
+
+    for (const entity of this.level.entitiesByCell.values()) {
+      if (entity.kind !== 'timedPlatform') continue;
+      if (!active) {
+        setColliderEnabled(entity, false);
+        entity.visual.setFillStyle(entity.color);
+        entity.visual.setAlpha(timedPlatformTiming.inactiveAlpha);
+        entity.glyph.setAlpha(timedPlatformTiming.inactiveAlpha);
+      }
+    }
+
+    if (!active) {
+      this.timedPlatformsAreActive = false;
+      return;
+    }
+
+    if (!this.timedPlatformsAreActive) {
+      for (const entity of this.level.entitiesByCell.values()) {
+        if (entity.kind === 'timedPlatform' && this.isPlayerOverlappingTimedPlatform(entity)) {
+          this.pendingTimedPlatformCells.add(entity.cellKey);
+        }
+      }
+      this.timedPlatformsAreActive = true;
+    }
+
+    for (const entity of this.level.entitiesByCell.values()) {
+      if (entity.kind !== 'timedPlatform') continue;
+      if (this.pendingTimedPlatformCells.has(entity.cellKey) && this.isPlayerOverlappingTimedPlatform(entity)) {
+        setColliderEnabled(entity, false);
+        entity.visual.setFillStyle(entity.color);
+        entity.visual.setAlpha(timedPlatformTiming.inactiveAlpha);
+        entity.glyph.setAlpha(timedPlatformTiming.inactiveAlpha);
+        continue;
+      }
+      this.pendingTimedPlatformCells.delete(entity.cellKey);
+      setColliderEnabled(entity, true);
+      entity.visual.setFillStyle(entity.color);
+      entity.visual.setAlpha(1);
+      entity.glyph.setAlpha(1);
+    }
+  }
+
+  private isPlayerOverlappingTimedPlatform(entity: RuntimeTileEntity): boolean {
+    const platformBody = entity.collider?.body as Phaser.Physics.Arcade.StaticBody | undefined;
+    if (!platformBody) return false;
+    const playerBody = this.player.body;
+    return playerBody.x < platformBody.x + platformBody.width
+      && playerBody.x + playerBody.width > platformBody.x
+      && playerBody.y < platformBody.y + platformBody.height
+      && playerBody.y + playerBody.height > platformBody.y;
   }
 
   private breakCrumbleBlock(entity: RuntimeTileEntity): void {

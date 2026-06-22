@@ -109,6 +109,7 @@ export class TestScene extends Phaser.Scene {
     if (!this.player || !this.controller || !this.builtLevel) return;
     this.state.elapsedMs += deltaMs;
     if (!this.state.isDead && !this.state.isComplete) {
+      this.tileRuntime?.update(deltaMs);
       this.controller.update(deltaMs);
       if (this.player.y > this.worldHeight + this.controller.tuning.deathMargin) this.killPlayer('You fell out of the level.');
     }

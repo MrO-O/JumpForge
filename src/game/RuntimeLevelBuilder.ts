@@ -42,6 +42,7 @@ export interface RuntimeLevelBuildResult {
   staminaRefills: Phaser.Physics.Arcade.StaticGroup;
   checkpoints: Phaser.Physics.Arcade.StaticGroup;
   collectibleBerries: Phaser.Physics.Arcade.StaticGroup;
+  timedPlatforms: Phaser.Physics.Arcade.StaticGroup;
   crumbleBlocks: Phaser.Physics.Arcade.StaticGroup;
   partialSolids: Phaser.Physics.Arcade.StaticGroup;
   spawnPosition: RuntimePosition | null;
@@ -130,6 +131,7 @@ const tileBuildHandlers: Partial<Record<RuntimeTileKind, TileBuildHandler>> = {
     context.entity.trigger = createPhysicalTile(context, context.result.collectibleBerries);
     context.result.collectibleTotal += 1;
   },
+  timedPlatform: (context) => { context.entity.collider = createPhysicalTile(context, context.result.timedPlatforms); },
   crumbleBlock: (context) => { context.entity.collider = createPhysicalTile(context, context.result.crumbleBlocks); },
 };
 
@@ -177,6 +179,7 @@ export function buildRuntimeLevel(scene: Phaser.Scene, level: LevelDocument): Ru
     staminaRefills: scene.physics.add.staticGroup(),
     checkpoints: scene.physics.add.staticGroup(),
     collectibleBerries: scene.physics.add.staticGroup(),
+    timedPlatforms: scene.physics.add.staticGroup(),
     crumbleBlocks: scene.physics.add.staticGroup(),
     partialSolids: scene.physics.add.staticGroup(),
     spawnPosition: null,

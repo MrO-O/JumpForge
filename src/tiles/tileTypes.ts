@@ -18,6 +18,7 @@ export type TileId =
   | 'staminaRefill'
   | 'checkpoint'
   | 'collectibleBerry'
+  | 'timedPlatform'
   | 'crumbleBlock'
   | 'halfBlockTop'
   | 'halfBlockBottom'
