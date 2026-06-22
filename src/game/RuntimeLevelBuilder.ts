@@ -13,9 +13,11 @@ export interface RuntimeTileEntity {
   cellX: number;
   cellY: number;
   collisionBox?: TileLocalBox;
+  hazardBox?: TileLocalBox;
   color: number;
   visual: Phaser.GameObjects.Rectangle;
   glyph: Phaser.GameObjects.Text;
+  hazardDecoration?: Phaser.GameObjects.Graphics;
   collider?: Phaser.GameObjects.Rectangle;
   trigger?: Phaser.GameObjects.Rectangle;
 }
@@ -77,8 +79,8 @@ function colorValue(color: string): number {
   return Phaser.Display.Color.HexStringToColor(color).color;
 }
 
-function createPhysicalTile(context: TileBuildContext, group: Phaser.Physics.Arcade.StaticGroup): Phaser.GameObjects.Rectangle {
-  const box = context.entity.collisionBox ?? { x: 0, y: 0, width: 1, height: 1 };
+function createPhysicalTile(context: TileBuildContext, group: Phaser.Physics.Arcade.StaticGroup, localBox?: TileLocalBox): Phaser.GameObjects.Rectangle {
+  const box = localBox ?? context.entity.collisionBox ?? { x: 0, y: 0, width: 1, height: 1 };
   const rectangle = context.scene.add.rectangle(
     (context.entity.cellX + box.x + box.width / 2) * context.tileSize,
     (context.entity.cellY + box.y + box.height / 2) * context.tileSize,
@@ -90,6 +92,32 @@ function createPhysicalTile(context: TileBuildContext, group: Phaser.Physics.Arc
   context.scene.physics.add.existing(rectangle, true);
   group.add(rectangle);
   return rectangle;
+}
+
+function drawSpikeDecoration(scene: Phaser.Scene, entity: RuntimeTileEntity, box: TileLocalBox, tileSize: number): Phaser.GameObjects.Graphics {
+  const graphics = scene.add.graphics().setDepth(1);
+  const left = (entity.cellX + box.x) * tileSize;
+  const top = (entity.cellY + box.y) * tileSize;
+  const width = box.width * tileSize;
+  const height = box.height * tileSize;
+  const step = Math.max(5, Math.min(width, height) / 3);
+  graphics.fillStyle(0xfee2e2, 0.88);
+  switch (entity.kind) {
+    case 'spikeBottom':
+      for (let x = left; x < left + width; x += step) graphics.fillTriangle(x, top + height - 2, Math.min(x + step, left + width), top + height - 2, Math.min(x + step / 2, left + width), top + 2);
+      break;
+    case 'spikeLeft':
+      for (let y = top; y < top + height; y += step) graphics.fillTriangle(left + 2, y, left + 2, Math.min(y + step, top + height), left + width - 2, Math.min(y + step / 2, top + height));
+      break;
+    case 'spikeRight':
+      for (let y = top; y < top + height; y += step) graphics.fillTriangle(left + width - 2, y, left + width - 2, Math.min(y + step, top + height), left + 2, Math.min(y + step / 2, top + height));
+      break;
+    case 'spikeTop':
+    case 'spike':
+      for (let x = left; x < left + width; x += step) graphics.fillTriangle(x, top + 2, Math.min(x + step, left + width), top + 2, Math.min(x + step / 2, left + width), top + height - 2);
+      break;
+  }
+  return graphics;
 }
 
 function createMergedStaticCollider(scene: Phaser.Scene, result: RuntimeLevelBuildResult, rect: MergedStaticRect, tileSize: number): void {
@@ -137,7 +165,11 @@ function createMovingPlatform(context: TileBuildContext): void {
 
 const tileBuildHandlers: Partial<Record<RuntimeTileKind, TileBuildHandler>> = {
   oneWayPlatform: (context) => { context.entity.collider = createPhysicalTile(context, context.result.oneWayPlatforms); },
-  spike: (context) => { context.entity.trigger = createPhysicalTile(context, context.result.spikes); },
+  spike: (context) => { context.entity.trigger = createPhysicalTile(context, context.result.spikes, context.entity.hazardBox); },
+  spikeTop: (context) => { context.entity.trigger = createPhysicalTile(context, context.result.spikes, context.entity.hazardBox); },
+  spikeBottom: (context) => { context.entity.trigger = createPhysicalTile(context, context.result.spikes, context.entity.hazardBox); },
+  spikeLeft: (context) => { context.entity.trigger = createPhysicalTile(context, context.result.spikes, context.entity.hazardBox); },
+  spikeRight: (context) => { context.entity.trigger = createPhysicalTile(context, context.result.spikes, context.entity.hazardBox); },
   goal: (context) => {
     context.result.goalPosition = { x: context.entity.x, y: context.entity.y };
     context.entity.trigger = createPhysicalTile(context, context.result.goals);
@@ -241,12 +273,14 @@ export function buildRuntimeLevel(scene: Phaser.Scene, level: LevelDocument): Ru
         cellX,
         cellY,
         collisionBox: tile.collisionBox,
+        hazardBox: tile.hazardBox,
         color,
         visual: scene.add.rectangle(x, y, level.tileSize * visualBox.width, level.tileSize * visualBox.height, color).setDepth(0),
         glyph: scene.add.text(x, y, tile.editor.glyph, {
           color: '#ffffff', fontFamily: 'system-ui, sans-serif', fontSize: `${Math.max(12, Math.floor(level.tileSize * 0.54))}px`,
         }).setOrigin(0.5).setDepth(1),
       };
+      if (tile.hazardous && entity.kind !== 'spike') entity.hazardDecoration = drawSpikeDecoration(scene, entity, visualBox, level.tileSize);
       result.entitiesByCell.set(entity.cellKey, entity);
       tileBuildHandlers[entity.kind]?.({ scene, result, entity, tileSize: level.tileSize });
     }

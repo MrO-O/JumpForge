@@ -1,5 +1,5 @@
 import { getTileDefinition, isTileAllowedForAbilities, listTilesByCategory } from '../tiles/tileRegistry';
-import type { TileId } from '../tiles/tileTypes';
+import { isSpikeTileId, spikeTileIds, type TileId } from '../tiles/tileTypes';
 import type { LevelDocument } from '../levels/levelTypes';
 
 const categoryLabels = {
@@ -22,6 +22,8 @@ export function TilePalette({ level, selectedTileId, onSelect, onNotice }: TileP
   const halfVariants: TileId[] = ['halfBlockTop', 'halfBlockBottom', 'halfBlockLeft', 'halfBlockRight'];
   const activeHalf = halfVariants.includes(selectedTileId) ? selectedTileId : 'halfBlockTop';
   const halfDirection = getTileDefinition(activeHalf)?.editor.label ?? '上';
+  const activeSpike = isSpikeTileId(selectedTileId) ? selectedTileId : 'spike';
+  const spikeDirection = getTileDefinition(activeSpike)?.editor.label ?? '全';
   return (
     <aside className="tile-palette" aria-label="Tile palette">
       <div className="panel-title-row"><h2>Tile palette</h2><span>左键绘制</span></div>
@@ -30,7 +32,8 @@ export function TilePalette({ level, selectedTileId, onSelect, onNotice }: TileP
           <h3>{categoryLabels[category as keyof typeof categoryLabels]}</h3>
           <div className="palette-tiles">
             {category === 'terrain' && <button className={`palette-tile${halfVariants.includes(selectedTileId) ? ' selected' : ''}`} type="button" onClick={() => onSelect(activeHalf)}><span className="half-block-icon" aria-hidden="true"><i /><i /></span><span>半块：{halfDirection}</span></button>}
-            {tiles.filter((tile) => !halfVariants.includes(tile.id)).map((tile) => {
+            {category === 'hazard' && <button className={`palette-tile${isSpikeTileId(selectedTileId) ? ' selected' : ''}`} type="button" onClick={() => onSelect(activeSpike)} aria-pressed={isSpikeTileId(selectedTileId)}><span className="palette-glyph" style={{ color: '#ef4444' }}>▲</span><span>尖刺：{spikeDirection}</span></button>}
+            {tiles.filter((tile) => !halfVariants.includes(tile.id) && !spikeTileIds.includes(tile.id as typeof spikeTileIds[number])).map((tile) => {
               const allowed = isTileAllowedForAbilities(tile.id, level.enabledAbilities);
               const selected = tile.id === selectedTileId;
               const required = tile.requiredAbilities?.join(', ');

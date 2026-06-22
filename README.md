@@ -26,6 +26,7 @@ npm run preview
 - Phaser 测试模式：有效关卡可从编辑器启动；`Esc` 或“返回编辑器”会销毁测试实例。
 - 玩家：左右移动、可变跳高、土狼时间、跳跃缓冲、掉出地图死亡和 `R` 重开。
 - 基础机制：`solid`、`oneWayPlatform`、`spike`、`spawn`、`goal`、从上方触发的 `spring`、`key` / `lockedDoor`、`switch` / `switchDoor`。
+- 尖刺笔刷：`spike` 保持完整 32×32 危险格，并提供 `spikeTop`、`spikeBottom`、`spikeLeft`、`spikeRight` 四种半格危险区域；它们不阻挡移动，只在各自可见的危险区域触发死亡。
 - dash：仅在关卡启用 `dash` 后可用。按 `Shift` 或 `X` 触发，方向键决定八方向；无方向输入时向面朝方向冲刺。
 - dash 规则：每次空中阶段可使用一次，落地恢复；dashCrystal 可在一次生命内补充一次；dashBlock 仅在 dash 接触时破坏。
 - wallJump：按跳跃键可从空中接触的实体墙面蹬墙跳；下落时会墙滑。它可按关卡启用。
@@ -123,6 +124,12 @@ Moving platform position and direction are Phaser runtime-only. Death, checkpoin
 The palette presents these IDs as one Half Block brush. Space cycles direction and Shift+Space cycles backward; the grid shows a ghost preview. Partial colliders merge only when their actual world rectangles touch, reducing seams without becoming an object layer.
 
 Half blocks are suitable for basic platform geometry, but different directions in complex L- or T-shaped joins can still snag under Phaser Arcade Physics. Avoid using `halfBlockLeft` / `halfBlockRight` as long precision walls; prefer `solid` or `climbWall` where stable wall movement matters. A complete fix should be a separate controller-level task using kinematic AABB or swept collision, not further epsilon tweaks.
+
+## Partial spikes
+
+The hazard palette presents `spike`, `spikeTop`, `spikeBottom`, `spikeLeft`, and `spikeRight` as one Spike brush: **尖刺：全 / 上 / 下 / 左 / 右**. With a spike selected, `Space` cycles forward through those five variants and `Shift+Space` cycles backward; the same shortcut continues to cycle Half Block only when a Half Block is selected.
+
+The full-cell spike keeps the original red-square-and-`▲` appearance in the palette, editor, preview, and runtime. Partial spikes draw a red, striped danger region and runtime triangle teeth only inside their corresponding half-cell; their hover preview uses the same simple red preview style as the full spike, with its half-cell position distinguishing the direction. Their `hazardBox` uses the same rectangle as the partial visual, so touching the blank half of the cell is safe while touching the displayed region causes death. Spikes never block movement and are not treated as solid, climbable walls, or merged terrain. As with other mechanisms, no built-in sample level is added for this feature; create a temporary editor scene for acceptance.
 
 ## 部署到 GitHub Pages
 

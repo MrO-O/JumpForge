@@ -80,6 +80,8 @@ npm run preview
 - Small tile variants use registry-local collision/visual boxes; do not change global tileSize or introduce an object layer.
 - Half-block palette grouping is UI-only; merge partial colliders by actual rectangles, not grid-cell occupancy.
 - Half-block data remains four tile IDs while the editor exposes one grouped brush and replacement hover preview. Do not claim complex L/T partial-wall corner snag is fixed without manual verification; treat `halfBlockLeft` / `halfBlockRight` precision walls as a known Arcade Physics limitation. A full remedy is a separate kinematic AABB/swept-collision task, not incremental epsilon patches.
+- Grouped brushes are UI-only: LevelDocument and exported JSON must continue to store the concrete tile ID selected by the brush.
+- Partial hazards must keep their registry-local visual and damage boxes aligned. Hazards are triggers only: do not place them in solid, wall, collision-merge, or dash-block paths.
 
 ## Ability System Rules
 

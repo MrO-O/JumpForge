@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { exportLevelToJson } from '../storage/importExport';
 import { placeTileAt, validateLevel } from '../levels/levelCommands';
 import type { LevelDocument } from '../levels/levelTypes';
-import type { TileId } from '../tiles/tileTypes';
+import { isSpikeTileId, spikeTileIds, type TileId } from '../tiles/tileTypes';
 import { GridEditor } from './GridEditor';
 import { LevelInspector } from './LevelInspector';
 import { TilePalette } from './TilePalette';
@@ -34,11 +34,13 @@ export function EditorWorkspace({ level, onChange, onSave, onTest, onBack, onNot
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
-      if (event.code !== 'Space' || !halfVariants.includes(selectedTileId) || target?.matches('input, textarea, select, [contenteditable="true"]')) return;
+      if (event.code !== 'Space' || target?.matches('input, textarea, select, [contenteditable="true"]')) return;
+      const variants: readonly TileId[] | null = halfVariants.includes(selectedTileId) ? halfVariants : isSpikeTileId(selectedTileId) ? spikeTileIds : null;
+      if (!variants) return;
       event.preventDefault();
-      const index = halfVariants.indexOf(selectedTileId);
+      const index = variants.indexOf(selectedTileId);
       const direction = event.shiftKey ? -1 : 1;
-      setSelectedTileId(halfVariants[(index + direction + halfVariants.length) % halfVariants.length]);
+      setSelectedTileId(variants[(index + direction + variants.length) % variants.length]);
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);

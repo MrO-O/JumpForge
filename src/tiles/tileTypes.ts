@@ -5,6 +5,10 @@ export type TileId =
   | 'solid'
   | 'oneWayPlatform'
   | 'spike'
+  | 'spikeTop'
+  | 'spikeBottom'
+  | 'spikeLeft'
+  | 'spikeRight'
   | 'spawn'
   | 'goal'
   | 'spring'
@@ -37,6 +41,13 @@ export interface TileLocalBox {
   height: number;
 }
 
+export const spikeTileIds = ['spike', 'spikeTop', 'spikeBottom', 'spikeLeft', 'spikeRight'] as const;
+export type SpikeTileId = (typeof spikeTileIds)[number];
+
+export function isSpikeTileId(tileId: TileId): tileId is SpikeTileId {
+  return spikeTileIds.includes(tileId as SpikeTileId);
+}
+
 export interface TileEditorVisual {
   color: string;
   glyph: string;
@@ -54,6 +65,8 @@ export interface TileDefinition {
   requiredAbilities?: AbilityId[];
   tags: string[];
   collisionBox?: TileLocalBox;
+  /** Local damage area for hazardous tiles. Defaults to the full cell when omitted. */
+  hazardBox?: TileLocalBox;
   visualBox?: TileLocalBox;
   editor: TileEditorVisual;
   runtime: { kind: RuntimeTileKind };

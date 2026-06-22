@@ -49,6 +49,7 @@ function setColliderEnabled(entity: RuntimeTileEntity, enabled: boolean): void {
 function setVisible(entity: RuntimeTileEntity, visible: boolean): void {
   entity.visual.setVisible(visible);
   entity.glyph.setVisible(visible);
+  entity.hazardDecoration?.setVisible(visible);
 }
 
 function setCheckpointAppearance(entity: RuntimeTileEntity, active: boolean): void {
