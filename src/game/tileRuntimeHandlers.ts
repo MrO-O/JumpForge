@@ -104,7 +104,21 @@ export class TileRuntimeController {
     this.scene.physics.add.overlap(this.player, this.level.staminaRefills, (_player, refill) => this.handleStaminaRefill(refill));
     this.scene.physics.add.overlap(this.player, this.level.checkpoints, (_player, checkpoint) => this.handleCheckpoint(checkpoint));
     this.scene.physics.add.overlap(this.player, this.level.collectibleBerries, (_player, berry) => this.handleCollectibleBerry(berry));
+    this.scene.events.on(Phaser.Scenes.Events.POST_UPDATE, this.syncMovingPlatformGlyphs, this);
     this.applyTimedPlatformPhase();
+  }
+
+  destroy(): void {
+    this.scene.events.off(Phaser.Scenes.Events.POST_UPDATE, this.syncMovingPlatformGlyphs, this);
+  }
+
+  /** Stops runtime-only moving platforms when a test is no longer advancing. */
+  freezeMovingPlatforms(): void {
+    for (const { entity } of this.level.movingPlatforms.values()) {
+      const body = entity.collider?.body as Phaser.Physics.Arcade.Body | undefined;
+      body?.setVelocity(0, 0);
+    }
+    this.syncMovingPlatformGlyphs();
   }
 
   resetForAttempt(preserveCheckpoint = false, preserveCollectibles = false): void {
@@ -336,6 +350,12 @@ export class TileRuntimeController {
       }
 
       body.setVelocityX(platform.direction * movingPlatformTuning.speedPxPerSecond);
+    }
+  }
+
+  /** The moving platform body is the rectangle; keep its separate glyph attached after physics advances. */
+  private syncMovingPlatformGlyphs(): void {
+    for (const { entity } of this.level.movingPlatforms.values()) {
       entity.glyph.setPosition(entity.visual.x, entity.visual.y);
     }
   }

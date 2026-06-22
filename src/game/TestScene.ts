@@ -160,6 +160,7 @@ export class TestScene extends Phaser.Scene {
   private completeLevel(): void {
     if (this.state.isDead || this.state.isComplete || !this.controller) return;
     this.state.isComplete = true;
+    this.tileRuntime?.freezeMovingPlatforms();
     this.state.currentMessage = `Level complete! Berries: ${this.state.collectedCollectibleCells.size} / ${this.state.collectibleTotal}. Return to the editor when ready.`;
     this.controller.setEnabled(false);
     this.publishStatus();
@@ -218,6 +219,7 @@ export class TestScene extends Phaser.Scene {
     this.gameInput?.dispose();
     this.gameInput = undefined;
     this.controller?.setEnabled(false);
+    this.tileRuntime?.destroy();
     this.tileRuntime = undefined;
   }
 }
